@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pricing - Jobletters.xyz</title>
+  
+  <meta name="description" content="Simple and transparent pricing for our AI-generated professional documents. Pay per download or subscribe for unlimited access.">
+
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0047ab">
+ 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+  
+  <style>
+    /* ------------------------------------- */
+    /* GLOBAL & UTILITIES (Copied from index.html) */
+    /* ------------------------------------- */
+    :root {
+      --primary: #0047ab;
+      --secondary: #667eea;
+      --accent: #ffd700;
+      --bg-color: #f7f9fc;
+      --text-color: #333;
+      --card-bg: white;
+      --gradient-main: linear-gradient(135deg, var(--primary) 0%, #0066cc 100%);
+      --gradient-ai: linear-gradient(135deg, var(--secondary) 0%, #764ba2 100%);
+      --success: #28a745;
+    }
+    * { box-sizing: border-box; scroll-behavior: smooth; }
+    body { font-family: 'Montserrat', sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-color); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    a { color: var(--primary); text-decoration: none; transition: color 0.3s ease; }
+    a:hover { color: #0056b3; }
+    .hidden { display: none !important; }
+
+    /* HEADER & NAV */
+    header { background: var(--gradient-main); color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .logo { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    .logo i { color: var(--accent); margin-right: 8px; }
+    .ai-badge { background: linear-gradient(135deg, #ff6b6b, var(--accent)); padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; color: #000; }
+    .hamburger { font-size: 28px; cursor: pointer; display: none; color: white; transition: transform 0.3s ease; }
+    
+    nav { display: flex; gap: 20px; }
+    nav a { color: white; font-weight: 500; font-size: 16px; position: relative; }
+    nav a::after { content: ''; position: absolute; width: 0%; height: 2px; bottom: -4px; left: 0; background-color: var(--accent); transition: width 0.3s ease; }
+    nav a:hover::after { width: 100%; }
+    
+    @media (max-width: 768px) {
+      nav { position: fixed; top: 60px; right: 0; background: var(--primary); height: calc(100% - 60px); width: 200px; flex-direction: column; padding: 20px; transform: translateX(100%); transition: transform 0.3s ease; box-shadow: -2px 0 6px rgba(0,0,0,0.2); }
+      nav.open { transform: translateX(0); }
+      nav a { padding: 15px 0; font-size: 18px; }
+      .hamburger { display: block; }
+    }
+
+    /* CONTAINER & TYPOGRAPHY */
+    .container { max-width: 1000px; background: var(--card-bg); margin: 40px auto 80px; padding: 30px 35px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.07); }
+    h1 { font-weight: 700; color: var(--primary); margin-bottom: 12px; text-align: center; }
+    h2 { color: var(--primary); margin-top: 35px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    p { line-height: 1.6; text-align: center; }
+    .button { background: var(--gradient-ai); border: none; color: white; font-weight: 700; padding: 15px 30px; border-radius: 6px; cursor: pointer; transition: background-color 0.3s ease, transform 0.2s ease; display: block; width: 100%; margin-top: 25px; text-decoration: none; text-align: center; }
+    .button:hover { opacity: 0.9; transform: scale(1.005); }
+
+    /* FOOTER */
+    footer { background-color: #222; color: #ccc; padding: 25px 20px; text-align: center; font-size: 14px; }
+    footer a { color: var(--accent); font-weight: 600; }
+
+    /* ------------------------------------- */
+    /* PRICING SPECIFIC STYLES */
+    /* ------------------------------------- */
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-top: 40px;
+        text-align: left;
+    }
+    .price-card {
+        background: var(--bg-color);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .price-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    .price-card.featured {
+        border: 4px solid var(--success);
+        background: #e6f7e9;
+    }
+
+    .price-card h3 {
+        color: var(--primary);
+        font-size: 1.8em;
+        margin-top: 0;
+        text-align: center;
+        border-bottom: 2px solid #ddd;
+        padding-bottom: 10px;
+    }
+    .price-card .price {
+        font-size: 3em;
+        font-weight: 700;
+        color: var(--success);
+        margin: 15px 0;
+        text-align: center;
+    }
+    .price-card .price small {
+        font-size: 0.4em;
+        font-weight: 400;
+        color: #777;
+        display: block;
+    }
+    .price-card ul {
+        list-style: none;
+        padding: 0;
+        flex-grow: 1;
+        margin: 20px 0 30px;
+    }
+    .price-card li {
+        margin-bottom: 12px;
+        font-size: 1.05em;
+        color: var(--text-color);
+    }
+    .price-card li i {
+        color: var(--success);
+        margin-right: 10px;
+    }
+    .price-card .button {
+        background: var(--gradient-ai);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .price-card.featured .button {
+        background: linear-gradient(135deg, var(--success) 0%, #1e7e34 100%);
+    }
+    
+    .note {
+        background-color: #fffbe6;
+        border-left: 5px solid #ffc107;
+        padding: 15px;
+        border-radius: 4px;
+        margin-top: 40px;
+        text-align: left;
+        color: #6a5300;
+        font-size: 0.95em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo" aria-label="Jobletters.xyz Logo">
+      <a href="/index.html" style="color: white; text-decoration: none; display: flex; align-items: center;">
+        <i class="fas fa-envelope"></i> Jobletters.xyz
+      </a>
+      <span class="ai-badge">AI POWERED</span>
+    </div>
+    <div class="hamburger" id="hamburger" aria-label="Menu" role="button" tabindex="0">
+      <i class="fas fa-bars"></i>
+    </div>
+    <nav id="navMenu" aria-label="Primary Navigation">
+      <a href="/index.html">Home</a>
+      <a href="/how-it-works.html">How It Works</a>
+      <a href="/pricing.html">Pricing</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/admin.html" id="adminLink" class="hidden">Admin</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <h1>💰 Simple, Transparent Pricing</h1>
+    <p>Get a high-quality, professional document instantly. Choose the plan that best fits your job search needs.</p>
+
+    <div class="pricing-grid">
+        <div class="price-card featured">
+            <h3>Pay Per Document</h3>
+            <div class="price" id="currentPriceDisplay">₦500 <small>per final download</small></div>
+            
+            <ul>
+                <li><i class="fas fa-check-circle"></i> **Single-use** Professional Document</li>
+                <li><i class="fas fa-check-circle"></i> AI-Generated Letter or Résumé Draft</li>
+                <li><i class="fas fa-check-circle"></i> Full Editing and Review Access</li>
+                <li><i class="fas fa-check-circle"></i> Unlimited Draft Regenerations</li>
+                <li><i class="fas fa-check-circle"></i> Final Download as Formatted PDF</li>
+            </ul>
+            <a href="/index.html" class="button">Start Generating Now</a>
+        </div>
+
+        <div class="price-card">
+            <h3>Job Hunter Subscription (Mock)</h3>
+            <div class="price">₦2,500 <small>per month (Simulated)</small></div>
+            
+            <ul>
+                <li><i class="fas fa-check-circle"></i> **Unlimited** Document Downloads</li>
+                <li><i class="fas fa-check-circle"></i> Access to Premium AI Models</li>
+                <li><i class="fas fa-check-circle"></i> Priority Customer Support</li>
+                <li><i class="fas fa-check-circle"></i> Custom Templates (Mock Feature)</li>
+                <li><i class="fas fa-check-circle"></i> Resume/CV Hosting (Mock Feature)</li>
+            </ul>
+            <a href="#" class="button" style="background: #ccc; cursor: not-allowed;">Coming Soon</a>
+        </div>
+    </div>
+    
+    <div class="note">
+        <i class="fas fa-info-circle"></i>
+        **Note:** The price shown for the "Pay Per Document" tier is currently set by the Admin and may be adjusted. The base price is ₦500.
+    </div>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Jobletters.xyz. All rights reserved.</p>
+    <p>Powered by AI Technology</p>
+  </footer>
+
+  <script>
+    const STORAGE_PREFIX = 'jobletters_';
+    
+    // Menu Toggle (FIXED)
+    const hamburger = document.getElementById('hamburger');
+    const navMenu = document.getElementById('navMenu');
+    hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
+
+    // Admin Link Visibility & Price Update
+    (function initPricing() {
+        if (localStorage.getItem(STORAGE_PREFIX + 'admin_access') === 'granted') {
+            document.getElementById('adminLink').classList.remove('hidden');
+        }
+        
+        // Load the price set by the Admin
+        const currentPrice = localStorage.getItem(STORAGE_PREFIX + 'price') || '₦500';
+        document.getElementById('currentPriceDisplay').innerHTML = `${currentPrice} <small>per final download</small>`;
+    })();
+  </script>
+</body>
+</html>
