@@ -1,369 +1,471 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>✉️ Jobletters.xyz - AI-Powered Job Document Generator</title>
-  
-  <meta name="description" content="AI-powered generator for professional Résumés, Cover Letters, and Resignation Letters. Create, preview, and download your documents with ease.">
-  <meta name="keywords" content="AI resume generator, AI cover letter, resignation letter, job documents, CV maker, professional documents, PWA">
-  <meta name="author" content="Jobletters.xyz">
-
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0047ab">
- 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
-  
-  <style>
-    /* ------------------------------------- */
-    /* GLOBAL & UTILITIES */
-    /* ------------------------------------- */
-    :root {
-      --primary: #0047ab;
-      --secondary: #667eea;
-      --accent: #ffd700;
-      --bg-color: #f7f9fc;
-      --text-color: #333;
-      --card-bg: white;
-      --gradient-main: linear-gradient(135deg, var(--primary) 0%, #0066cc 100%);
-      --gradient-ai: linear-gradient(135deg, var(--secondary) 0%, #764ba2 100%);
-    }
-    * { box-sizing: border-box; scroll-behavior: smooth; }
-    body { font-family: 'Montserrat', sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-color); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-    a { color: var(--primary); text-decoration: none; transition: color 0.3s ease; }
-    a:hover { color: #0056b3; }
-    .hidden { display: none !important; }
-
-    /* ------------------------------------- */
-    /* HEADER & NAV */
-    /* ------------------------------------- */
-    header { background: var(--gradient-main); color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-    .logo { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-    .logo i { color: var(--accent); margin-right: 8px; }
-    .ai-badge { background: linear-gradient(135deg, #ff6b6b, var(--accent)); padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; color: #000; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-    .hamburger { font-size: 28px; cursor: pointer; display: none; color: white; transition: transform 0.3s ease; }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI-Powered Job Document Generator - Jobletters.xyz</title>
     
-    nav { display: flex; gap: 20px; }
-    nav a { color: white; font-weight: 500; font-size: 16px; position: relative; }
-    nav a::after { content: ''; position: absolute; width: 0%; height: 2px; bottom: -4px; left: 0; background-color: var(--accent); transition: width 0.3s ease; }
-    nav a:hover::after { width: 100%; }
-    
-    @media (max-width: 768px) {
-      nav { position: fixed; top: 60px; right: 0; background: var(--primary); height: calc(100% - 60px); width: 200px; flex-direction: column; padding: 20px; transform: translateX(100%); transition: transform 0.3s ease; box-shadow: -2px 0 6px rgba(0,0,0,0.2); }
-      nav.open { transform: translateX(0); }
-      nav a { padding: 15px 0; font-size: 18px; }
-      .hamburger { display: block; }
-    }
+    <meta name="description" content="Generate professional, customized job documents (Résumés, Cover Letters, Resignation, Academic) instantly using advanced AI technology.">
 
-    /* ------------------------------------- */
-    /* CONTAINER & TYPOGRAPHY */
-    /* ------------------------------------- */
-    .container { max-width: 800px; background: var(--card-bg); margin: 40px auto 80px; padding: 30px 35px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.07); }
-    h1 { font-weight: 700; color: var(--primary); margin-bottom: 12px; }
-    h3 { margin-top: 35px; color: var(--primary); }
-    p { line-height: 1.6; }
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0047ab">
 
-    /* ------------------------------------- */
-    /* INFO BANNERS */
-    /* ------------------------------------- */
-    .info-banner { background: var(--gradient-ai); color: white; padding: 15px 20px; border-radius: 8px; margin: 20px 0; display: flex; align-items: center; gap: 15px; }
-    .info-banner i { font-size: 24px; }
-    .highlight { background: linear-gradient(135deg, #fff8e1 0%, #ffe082 100%); border-left: 6px solid #ffc107; padding: 20px; border-radius: 8px; margin: 25px 0; font-size: 15px; line-height: 1.4; }
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
 
-    /* ------------------------------------- */
-    /* FORMS & BUTTONS */
-    /* ------------------------------------- */
-    input, select, textarea, button { font-family: 'Montserrat', sans-serif; font-size: 16px; border-radius: 6px; border: 1.5px solid #ccc; padding: 12px 15px; margin: 15px 0 0; width: 100%; transition: border-color 0.3s ease; outline-offset: 2px; }
-    input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 6px rgba(0, 71, 171, 0.2); }
-    label { font-weight: 600; margin-top: 25px; display: block; }
-    textarea { min-height: 100px; resize: vertical; }
-    button { background-color: var(--primary); border: none; color: white; font-weight: 700; cursor: pointer; transition: background-color 0.3s ease, transform 0.2s ease; }
-    button.primary-btn { margin-top: 25px; background: var(--gradient-ai); position: relative; overflow: hidden; }
-    button.primary-btn::before { content: '✨'; position: absolute; left: 15px; font-size: 18px; }
-    button:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.005); }
-    button:disabled { background-color: #999; cursor: not-allowed; }
-    .ai-generating { background: linear-gradient(90deg, #667eea, #764ba2, #667eea); background-size: 200% 100%; animation: shimmer 2s infinite; }
-    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-    
-    /* ------------------------------------- */
-    /* PREVIEW & DOWNLOAD */
-    /* ------------------------------------- */
-    #letter { background: #f8f9fa; border: 2px solid var(--primary); padding: 30px; border-radius: 8px; white-space: pre-line; font-size: 16px; line-height: 1.8; min-height: 200px; font-family: 'Georgia', serif; overflow-x: auto; position: relative; }
-    #letter::before { content: '🤖 AI Generated Document'; position: absolute; top: 10px; right: 10px; background: var(--gradient-ai); color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; font-family: 'Montserrat', sans-serif; }
-    .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
-    .preview-header button { width: auto; margin: 0; padding: 8px 12px; font-size: 14px; }
-    #downloadBtn { background-color: #28a745; margin-top: 15px; }
-    
-    /* ------------------------------------- */
-    /* MODAL & LOADER */
-    /* ------------------------------------- */
-    .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 2000; text-align: center; max-width: 80%; opacity: 0; transition: opacity 0.5s ease-out; }
-    .modal.show { opacity: 1; }
-    .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; margin-left: 8px; vertical-align: middle; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    <style>
+        /* ------------------------------------- */
+        /* Global Styles and Utilities */
+        /* ------------------------------------- */
+        :root {
+            --primary: #0047ab;
+            --secondary: #667eea;
+            --accent: #ffd700;
+            --bg-color: #f7f9fc;
+            --text-color: #333;
+            --card-bg: white;
+            --gradient-main: linear-gradient(135deg, var(--primary) 0%, #0066cc 100%);
+            --gradient-ai: linear-gradient(135deg, var(--secondary) 0%, #764ba2 100%);
+        }
+        * { box-sizing: border-box; scroll-behavior: smooth; }
+        body { font-family: 'Montserrat', sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-color); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        a { color: var(--primary); text-decoration: none; transition: color 0.3s ease; }
+        a:hover { color: #0056b3; }
+        .hidden { display: none !important; }
 
-    /* ------------------------------------- */
-    /* FOOTER */
-    /* ------------------------------------- */
-    footer { background-color: #222; color: #ccc; padding: 25px 20px; text-align: center; font-size: 14px; }
-    footer a { color: var(--accent); font-weight: 600; }
-  </style>
+        /* Header & Nav */
+        header { background: var(--gradient-main); color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .logo { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .logo i { color: var(--accent); margin-right: 8px; }
+        .ai-badge { background: linear-gradient(135deg, #ff6b6b, var(--accent)); padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; color: #000; }
+        .hamburger { font-size: 28px; cursor: pointer; display: none; color: white; transition: transform 0.3s ease; }
+        
+        nav { display: flex; gap: 20px; }
+        nav a { color: white; font-weight: 500; font-size: 16px; position: relative; }
+        nav a::after { content: ''; position: absolute; width: 0%; height: 2px; bottom: -4px; left: 0; background-color: var(--accent); transition: width 0.3s ease; }
+        nav a:hover::after { width: 100%; }
+        
+        @media (max-width: 768px) {
+            nav { position: fixed; top: 60px; right: 0; background: var(--primary); height: calc(100% - 60px); width: 200px; flex-direction: column; padding: 20px; transform: translateX(100%); transition: transform 0.3s ease; box-shadow: -2px 0 6px rgba(0,0,0,0.2); }
+            nav.open { transform: translateX(0); }
+            nav a { padding: 15px 0; font-size: 18px; }
+            .hamburger { display: block; }
+        }
+
+        /* Main Content and Forms */
+        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        
+        .hero { background: var(--card-bg); padding: 40px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.07); margin-bottom: 30px; }
+        .hero h1 { font-size: 28px; font-weight: 700; color: var(--primary); margin-top: 0; display: flex; align-items: center; gap: 10px; }
+        .hero h1 i { color: var(--accent); }
+        
+        .form-section { background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        
+        /* Form Element Styles */
+        label { font-weight: 600; margin-top: 20px; display: block; }
+        input[type="text"], input[type="email"], textarea, select { 
+            font-family: 'Montserrat', sans-serif; 
+            font-size: 16px; 
+            border-radius: 6px; 
+            border: 1.5px solid #ccc; 
+            padding: 12px 15px; 
+            margin: 5px 0 0; 
+            width: 100%; 
+            transition: border-color 0.3s ease; 
+            outline-offset: 2px;
+        }
+        input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 6px rgba(0, 71, 171, 0.2); }
+        textarea { min-height: 120px; resize: vertical; }
+
+        /* Buttons */
+        .button { 
+            border: none; 
+            color: white; 
+            font-weight: 700; 
+            padding: 15px 30px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            transition: opacity 0.3s ease, transform 0.2s ease; 
+            margin-top: 25px; 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        #generateBtn { background: var(--gradient-ai); width: 100%; font-size: 18px; }
+        #generateBtn:hover { opacity: 0.95; transform: translateY(-1px); }
+        #generateBtn.ai-generating { background: #ff6b6b; cursor: wait; }
+        
+        /* Preview Section */
+        #preview-section { margin-top: 40px; background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        #preview-section h2 { color: #28a745; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
+        #letter { white-space: pre-wrap; font-family: monospace; background: #fafafa; padding: 15px; border: 1px dashed #ccc; border-radius: 6px; max-height: 400px; overflow-y: auto; margin-bottom: 20px; }
+        
+        .preview-actions { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+        .preview-actions button, .preview-actions a { flex: 1; min-width: 150px; max-width: 250px; font-size: 16px; }
+        
+        #payBtn { background: linear-gradient(45deg, #ffc107, #ff9800); color: var(--text-color); }
+        #payBtn:disabled { background: #ccc; cursor: not-allowed; }
+        #downloadBtn { background: linear-gradient(45deg, #28a745, #1e7e34); display: none; }
+        #downloadBtn:disabled { background: #ccc; cursor: not-allowed; }
+        #regenerateBtn { background-color: #007bff; }
+        
+        /* Spinner */
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid white; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Modal (For alerts/messages) */
+        .modal { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 100%); background: #333; color: white; padding: 15px 25px; border-radius: 8px; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.5s ease-out; opacity: 0; }
+        .modal.show { transform: translate(-50%, 0); opacity: 1; }
+
+        /* Footer */
+        footer { background-color: #222; color: #ccc; padding: 25px 20px; text-align: center; font-size: 14px; margin-top: 40px; }
+        footer a { color: var(--accent); font-weight: 600; }
+    </style>
 </head>
 <body>
-  <header>
-    <div class="logo" aria-label="Jobletters.xyz Logo">
-      <div>
-        <i class="fas fa-envelope"></i> Jobletters.xyz
-      </div>
-      <span class="ai-badge">AI POWERED</span>
-    </div>
-    <div class="hamburger" id="hamburger" aria-label="Menu" role="button" tabindex="0">
-      <i class="fas fa-bars"></i>
-    </div>
-    <nav id="navMenu" aria-label="Primary Navigation">
-  <a href="/index.html">Home</a>
-  <a href="/how-it-works.html">How It Works</a>
-  <a href="/pricing.html">Pricing</a>
-  <a href="/contact.html">Contact</a>
-  <a href="/admin.html" id="adminLink" class="hidden">Admin</a>
-    </nav>
-  </header>
-
-  <main class="container">
-    <h1>🤖 AI-Powered Job Document Generator</h1>
-    <p>Create perfectly tailored professional documents using advanced AI. Just provide your details and let AI craft the perfect document for you.</p>
-
-    <div class="info-banner">
-      <i class="fas fa-robot"></i>
-      <div>
-        <strong>Powered by Advanced AI</strong><br/>
-        The AI is configured by the site administrator to ensure top-quality document generation.
-      </div>
-    </div>
-
-    <h3>Select Document Type</h3>
-    <select id="documentType" onchange="showForm(this.value)" aria-label="Select document type" required>
-        <option value="">-- Select a document --</option>
-        <option value="resume">Résumé (CV)</option>
-        <option value="coverLetter">Cover Letter</option>
-        <option value="resignation">Resignation Letter</option>
-    </select>
-    
-    <div id="formsContainer">
-        <div id="resumeForm" class="hidden">
-            <h3>Résumé (CV) Details</h3>
-            <label for="fullName">Full Name *</label>
-            <input type="text" id="fullName" placeholder="Jane Doe" required />
-            <label for="email">Email Address *</label>
-            <input type="email" id="email" placeholder="janedoe@example.com" required />
-            <label for="experience">Work Experience *</label>
-            <textarea id="experience" placeholder="List your key roles, achievements, and responsibilities." aria-label="Work Experience" required></textarea>
-            <label for="education">Education *</label>
-            <textarea id="education" placeholder="Your degrees, institutions, and relevant certifications." aria-label="Education" required></textarea>
-            <label for="skills">Key Skills (Comma separated) *</label>
-            <input type="text" id="skills" placeholder="e.g. JavaScript, React, Python, Data Analysis, SEO" aria-label="Skills" required />
+    <header>
+        <div class="logo" aria-label="Jobletters.xyz Logo">
+            <a href="/index.html" style="color: white; text-decoration: none; display: flex; align-items: center;">
+                <i class="fas fa-envelope"></i> Jobletters.xyz
+            </a>
+            <span class="ai-badge">AI POWERED</span>
         </div>
-
-        <div id="coverLetterForm" class="hidden">
-            <h3>Cover Letter Details</h3>
-            <label for="cl_fullName">Your Full Name *</label>
-            <input type="text" id="cl_fullName" placeholder="e.g. Jane Doe" aria-label="Your Full Name" required />
-            <label for="cl_jobTitle">Job Title You Are Applying For *</label>
-            <input type="text" id="cl_jobTitle" placeholder="e.g. Senior Software Engineer" aria-label="Job Title" required />
-            <label for="cl_companyName">Company Name *</label>
-            <input type="text" id="cl_companyName" placeholder="e.g. Tech Innovations Inc." aria-label="Company Name" required />
-            <label for="cl_experience">Your Relevant Experience *</label>
-            <textarea id="cl_experience" placeholder="Briefly describe your relevant work experience and achievements..." aria-label="Your Experience" required></textarea>
+        <div class="hamburger" id="hamburger" aria-label="Menu" role="button" tabindex="0">
+            <i class="fas fa-bars"></i>
         </div>
+        <nav id="navMenu" aria-label="Primary Navigation">
+            <a href="/index.html">Home</a>
+            <a href="/how-it-works.html">How It Works</a>
+            <a href="/pricing.html">Pricing</a>
+            <a href="/contact.html">Contact</a>
+            <a href="/admin.html" id="adminLink" class="hidden">Admin</a>
+        </nav>
+    </header>
+
+    <main class="container">
         
-        <div id="resignationForm" class="hidden">
-            <h3>Resignation Letter Details</h3>
-            <label for="rl_fullName">Your Full Name *</label>
-            <input type="text" id="rl_fullName" placeholder="e.g. Jane Doe" aria-label="Your Full Name" required />
-            <label for="rl_position">Your Position *</label>
-            <input type="text" id="rl_position" placeholder="e.g. Senior Marketing Manager" aria-label="Your Position" required />
-            <label for="rl_lastDay">Last Working Day *</label>
-            <input type="date" id="rl_lastDay" aria-label="Last Working Day" required />
-            <label for="rl_reason">Reason for Resignation *</label>
-            <select id="rl_reason" aria-label="Reason for Resignation" required>
-                <option value="better_opportunity">Better Career Opportunity</option>
-                <option value="personal">Personal Reasons</option>
-                <option value="other">Other</option>
+        <section class="hero">
+            <h1><i class="fas fa-robot"></i> AI-Powered Job Document Generator</h1>
+            <p>Create perfectly tailored professional documents using advanced AI. Just provide your details and let AI craft the perfect document for you.</p>
+
+            <label for="documentType">Select Document Type *</label>
+            <select id="documentType" onchange="showForm(this.value)" required>
+                <option value="">-- Select Document --</option>
+                <option value="resume">Professional Résumé / CV</option>
+                <option value="coverLetter">Job Application Cover Letter</option>
+                <option value="resignation">Formal Resignation Letter</option>
+                <option value="academic">Academic Letter (Student Request/Apology)</option>
             </select>
-        </div>
-    </div>
-    
-    <button class="primary-btn" id="generateBtn" onclick="generateDocument()">Generate AI-Enhanced Document</button>
+        </section>
 
-    <div id="preview-section" class="hidden">
-        <h3>Document Preview</h3>
-        <div class="preview-header">
-            <p style="margin: 0; font-weight: 500;">Preview of your custom letter:</p>
-            <div class="preview-actions">
-                <button id="regenerateBtn" onclick="regenerateDocument()" title="Regenerate with AI" aria-label="Regenerate"><i class="fas fa-sync-alt"></i> Regenerate</button>
-                <button id="emailBtn" onclick="emailDocument()" title="Email Document" aria-label="Email Document"><i class="fas fa-envelope"></i> Email Draft</button>
-                <button id="printBtn" onclick="printDocument()" title="Print Document" aria-label="Print Document"><i class="fas fa-print"></i> Print</button>
+        <section class="form-section">
+            <div id="formsContainer">
+                
+                <div id="resumeForm" class="hidden">
+                    <h3>Résumé / CV Details</h3>
+                    <label for="fullName">Full Name *</label>
+                    <input type="text" id="fullName" placeholder="Jane Doe" required />
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" placeholder="janedoe@example.com" required />
+                    
+                    <div style="margin-top: 10px; display: flex; align-items: center;">
+                        <input type="checkbox" id="saveDataCheckbox" style="width: auto; margin: 0 10px 0 0;" />
+                        <label for="saveDataCheckbox" style="margin: 0; display: inline-block; font-weight: 400;">
+                            <i class="fas fa-save" style="color: var(--primary);"></i> Save my name and email for next time.
+                        </label>
+                    </div>
+
+                    <label for="experience">Work Experience Summary *</label>
+                    <textarea id="experience" placeholder="Briefly list 3-5 key roles, achievements, and responsibilities (e.g., 'Led a 5-person team, increasing efficiency by 20%')."></textarea>
+                    <label for="education">Education / Certifications *</label>
+                    <input type="text" id="education" placeholder="e.g. B.Sc. Computer Science, University of Lagos (2018)" required />
+                    <label for="skills">Key Skills (Comma Separated) *</label>
+                    <input type="text" id="skills" placeholder="e.g. Python, SQL, Agile, Project Management" required />
+                </div>
+
+                <div id="coverLetterForm" class="hidden">
+                    <h3>Cover Letter Details</h3>
+                    <label for="cl_fullName">Your Full Name *</label>
+                    <input type="text" id="cl_fullName" placeholder="Jane Doe" required />
+                    <label for="cl_jobTitle">Target Job Title *</label>
+                    <input type="text" id="cl_jobTitle" placeholder="e.g. Senior Software Developer" required />
+                    <label for="cl_companyName">Company Name *</label>
+                    <input type="text" id="cl_companyName" placeholder="e.g. TechCorp Solutions" required />
+                    <label for="cl_experience">Specific Experience/Achievements *</label>
+                    <textarea id="cl_experience" placeholder="Detail 2-3 specific achievements relevant to the job description that show impact."></textarea>
+                </div>
+
+                <div id="resignationForm" class="hidden">
+                    <h3>Resignation Letter Details</h3>
+                    <label for="rl_fullName">Your Full Name *</label>
+                    <input type="text" id="rl_fullName" placeholder="John Smith" required />
+                    <label for="rl_position">Your Current Position *</label>
+                    <input type="text" id="rl_position" placeholder="e.g. Marketing Executive" required />
+                    <label for="rl_lastDay">Intended Last Day of Employment *</label>
+                    <input type="text" id="rl_lastDay" placeholder="e.g. October 30, 2025 (Allowing for notice period)" required />
+                    <label for="rl_reason">Reason for Resignation (Optional, for draft inclusion)</label>
+                    <textarea id="rl_reason" placeholder="e.g. Pursuing a new career opportunity; Relocation; Personal reasons."></textarea>
+                </div>
+                
+                <div id="academicForm" class="hidden">
+                    <h3>Academic Letter Details (Student)</h3>
+                    <label for="ac_fullName">Your Full Name *</label>
+                    <input type="text" id="ac_fullName" placeholder="e.g. John Kalu" aria-label="Your Full Name" required />
+                    <label for="ac_matricNumber">Matric/Student Number *</label>
+                    <input type="text" id="ac_matricNumber" placeholder="e.g. 2022/COM/005" aria-label="Matric Number" required />
+                    <label for="ac_recipient">Recipient *</label>
+                    <select id="ac_recipient" aria-label="Recipient" required>
+                        <option value="HOD">Head of Department (HOD)</option>
+                        <option value="Dean">Dean of Faculty</option>
+                        <option value="Registrar">Registrar/Exams Office</option>
+                        <option value="Lecturer">Specific Lecturer</option>
+                    </select>
+                    <label for="ac_purpose">Purpose of Letter *</label>
+                    <select id="ac_purpose" onchange="updateAcademicPrompt(this.value)" aria-label="Purpose" required>
+                        <option value="">-- Select Purpose --</option>
+                        <option value="course_change">Request for Course Change/Addition</option>
+                        <option value="result_statement">Request for Statement of Result</option>
+                        <option value="apology">Apology for Absence/Misconduct</option>
+                        <option value="deferment">Request for Deferment of Study</option>
+                    </select>
+                    <label for="ac_details" id="ac_details_label">Details / Justification *</label>
+                    <textarea id="ac_details" placeholder="Explain the reasons (e.g., the specific course names, dates of absence, or reason for deferment)..." aria-label="Details / Justification" required></textarea>
+                </div>
             </div>
-        </div>
-        <pre id="letter" aria-live="polite" aria-atomic="true"></pre>
-        
-        <div class="highlight" style="text-align: center;">
-            <p style="margin: 0 0 10px 0; font-size: 1.1em;">Download your final document as a **Formatted PDF**.</p>
-            
-            <button id="payBtn" onclick="handlePayment()" style="background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); width: auto; padding: 15px 30px;">
-                <i class="fas fa-file-pdf"></i> Pay <span id="currentPrice">₦500</span> to Download PDF
+
+            <button id="generateBtn" class="button hidden" onclick="generateDocument()">
+                <i class="fas fa-magic"></i> Generate AI-Enhanced Document
             </button>
-            <button id="downloadBtn" onclick="downloadPDF()" disabled style="background-color: #34495e; display: none;"><i class="fas fa-download"></i> Download PDF (Paid)</button>
-        </div>
-    </div>
-  </main>
+        </section>
 
-  <footer>
-    <p>&copy; 2025 Jobletters.xyz. All rights reserved.</p>
-    <p>Powered by AI Technology</p>
-  </footer>
+        <section id="preview-section" class="hidden">
+            <h2><i class="fas fa-file-alt"></i> Document Preview (AI Draft)</h2>
+            <div id="letter"></div>
+            
+            <div class="preview-actions">
+                <button id="regenerateBtn" class="button" onclick="regenerateDocument()">
+                    <i class="fas fa-sync-alt"></i> Regenerate
+                </button>
+                <button id="payBtn" class="button" onclick="handlePayment()">
+                    <i class="fas fa-credit-card"></i> Pay <span id="currentPrice">₦500</span> & Download
+                </button>
+                <button id="downloadBtn" class="button" onclick="downloadPDF()">
+                    <i class="fas fa-download"></i> Download PDF
+                </button>
+            </div>
+            <div style="text-align: center; margin-top: 15px; font-size: 0.9em; color: #555;">
+                <button class="button" style="background-color: #f8f9fa; color: var(--text-color); margin-top: 0;" onclick="emailDocument()">
+                    <i class="fas fa-envelope-open-text"></i> Email Document
+                </button>
+                <button class="button" style="background-color: #f8f9fa; color: var(--text-color); margin-top: 0;" onclick="printDocument()">
+                    <i class="fas fa-print"></i> Print Draft
+                </button>
+            </div>
+        </section>
+        
+    </main>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  
-  <script>
-    const STORAGE_PREFIX = 'jobletters_';
-    let currentDocumentType = "";
-    let generatedDocumentText = "";
+    <footer>
+        <p>&copy; 2025 Jobletters.xyz. All rights reserved.</p>
+        <p>Powered by AI Technology</p>
+    </footer>
 
-    // --- PWA Service Worker Registration ---
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js').then(registration => {
-          console.log('SW registered: ', registration);
-        }).catch(registrationError => {
-          console.log('SW registration failed: ', registrationError);
-        });
-      });
-    }
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    // --- FIX 1: Menu Toggle Script ---
-    const hamburger = document.getElementById('hamburger');
-    const navMenu = document.getElementById('navMenu');
-    hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
+    <script>
+        const STORAGE_PREFIX = 'jobletters_';
+        let currentDocumentType = "";
+        let generatedDocumentText = "";
 
-    // Check for admin access and load price on startup
-    (function initApp() {
-        if (localStorage.getItem(STORAGE_PREFIX + 'admin_access') === 'granted') {
-            document.getElementById('adminLink').classList.remove('hidden');
+        // --- PWA Service Worker Registration ---
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js').then(registration => {
+              console.log('SW registered: ', registration);
+            }).catch(registrationError => {
+              console.log('SW registration failed: ', registrationError);
+            });
+          });
+        }
+
+        // --- Menu Toggle Script ---
+        const hamburger = document.getElementById('hamburger');
+        const navMenu = document.getElementById('navMenu');
+        hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
+
+        // --- NEW: Load/Save Data Functions (MOCK ACCOUNT) ---
+        function loadSavedData() {
+            if (document.getElementById('saveDataCheckbox')) {
+                if (localStorage.getItem(STORAGE_PREFIX + 'saveDataCheckbox') === 'true') {
+                    document.getElementById('saveDataCheckbox').checked = true;
+                    document.getElementById('fullName').value = localStorage.getItem(STORAGE_PREFIX + 'fullName') || '';
+                    document.getElementById('email').value = localStorage.getItem(STORAGE_PREFIX + 'email') || '';
+                }
+            }
         }
         
-        const price = localStorage.getItem(STORAGE_PREFIX + 'price') || '₦500';
-        document.getElementById('currentPrice').textContent = price;
-    })();
+        function saveData(data) {
+            if (document.getElementById('saveDataCheckbox')?.checked) {
+                localStorage.setItem(STORAGE_PREFIX + 'saveDataCheckbox', 'true');
+                localStorage.setItem(STORAGE_PREFIX + 'fullName', data.name);
+                localStorage.setItem(STORAGE_PREFIX + 'email', data.email);
+            } else {
+                localStorage.removeItem(STORAGE_PREFIX + 'saveDataCheckbox');
+                localStorage.removeItem(STORAGE_PREFIX + 'fullName');
+                localStorage.removeItem(STORAGE_PREFIX + 'email');
+            }
+        }
 
-    // --- FIX 2: Form Display Logic ---
-    function showForm(docType) {
-      const forms = document.querySelectorAll('#formsContainer > div');
-      forms.forEach(form => form.classList.add('hidden'));
+        // Check for admin access and load price on startup
+        (function initApp() {
+            if (localStorage.getItem(STORAGE_PREFIX + 'admin_access') === 'granted') {
+                document.getElementById('adminLink').classList.remove('hidden');
+            }
+            
+            const price = localStorage.getItem(STORAGE_PREFIX + 'price') || '₦500';
+            document.getElementById('currentPrice').textContent = price;
+            
+            // Load saved contact details immediately
+            loadSavedData();
+        })();
 
-      if (docType) {
-          const formId = docType + 'Form';
-          document.getElementById(formId).classList.remove('hidden');
-          document.getElementById('generateBtn').classList.remove('hidden');
-          document.getElementById('preview-section').classList.add('hidden');
-      } else {
-          document.getElementById('generateBtn').classList.add('hidden');
-          document.getElementById('preview-section').classList.add('hidden');
-      }
-      currentDocumentType = docType;
-    }
+        // --- Form Display Logic ---
+        function showForm(docType) {
+          const forms = document.querySelectorAll('#formsContainer > div');
+          forms.forEach(form => form.classList.add('hidden'));
 
+          if (docType) {
+              const formId = docType + 'Form';
+              document.getElementById(formId).classList.remove('hidden');
+              document.getElementById('generateBtn').classList.remove('hidden');
+              document.getElementById('preview-section').classList.add('hidden');
+          } else {
+              document.getElementById('generateBtn').classList.add('hidden');
+              document.getElementById('preview-section').classList.add('hidden');
+          }
+          currentDocumentType = docType;
+        }
 
-    async function generateDocument() {
-        const btn = document.getElementById('generateBtn');
-        btn.disabled = true;
-        btn.innerHTML = 'AI is Drafting... <span class="spinner"></span>';
-        btn.classList.add('ai-generating');
-        document.getElementById('preview-section').classList.add('hidden');
+        // --- NEW: Academic Prompt Helper ---
+        function updateAcademicPrompt(purpose) {
+            const label = document.getElementById('ac_details_label');
+            if (purpose === 'course_change') {
+                label.textContent = "Courses to Add/Drop and Justification *";
+            } else if (purpose === 'result_statement') {
+                label.textContent = "Specify Academic Session(s) and Reason for Request *";
+            } else if (purpose === 'apology') {
+                label.textContent = "Dates and Circumstances Requiring Apology *";
+            } else {
+                label.textContent = "Details / Justification *";
+            }
+        }
 
-        if (!validateForm(currentDocumentType)) {
-            showModal("⚠️ Please fill in all required fields (*).");
+        async function generateDocument() {
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.innerHTML = 'AI is Drafting... <span class="spinner"></span>';
+            btn.classList.add('ai-generating');
+            document.getElementById('preview-section').classList.add('hidden');
+
+            if (!validateForm(currentDocumentType)) {
+                showModal("⚠️ Please fill in all required fields (*).");
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
+                btn.classList.remove('ai-generating');
+                return;
+            }
+
+            const data = collectFormData(currentDocumentType);
+            
+            // --- Save Contact Data (NEW) ---
+            if (currentDocumentType === 'resume') {
+                 saveData(data);
+            }
+
+            // --- SECURE MOCK API CALL (Simulating server-side AI processing) ---
+            const adminKey = localStorage.getItem(STORAGE_PREFIX + 'api_key');
+            if (!adminKey) {
+                 showModal("🔑 System error: AI Key not configured by Admin. Cannot generate document.");
+                 btn.disabled = false;
+                 btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
+                 btn.classList.remove('ai-generating');
+                 return;
+            }
+
+            // Mock a successful API call delay
+            await new Promise(resolve => setTimeout(resolve, 2000)); 
+            const mockGeneratedText = mockAIGenerator(currentDocumentType, data);
+            
+            // Update Metrics (Mocked to simulate server increment)
+            incrementMetric('generations');
+
+            // Display Results
+            generatedDocumentText = mockGeneratedText;
+            document.getElementById('letter').textContent = generatedDocumentText;
+            
+            document.getElementById('preview-section').classList.remove('hidden');
+            document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+            
+            // Reset Download Buttons
+            document.getElementById('payBtn').style.display = 'block';
+            document.getElementById('downloadBtn').style.display = 'none';
+            document.getElementById('downloadBtn').disabled = true;
+
             btn.disabled = false;
-            btn.innerHTML = 'Generate AI-Enhanced Document';
+            btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
             btn.classList.remove('ai-generating');
-            return;
+            showModal("✅ AI Draft complete! Review and Download.");
         }
-
-        const data = collectFormData(currentDocumentType);
         
-        // --- SECURE MOCK API CALL (Simulating server-side AI processing) ---
-        const adminKey = localStorage.getItem(STORAGE_PREFIX + 'api_key');
-        if (!adminKey) {
-             showModal("🔑 System error: AI Key not configured by Admin. Cannot generate document.");
-             btn.disabled = false;
-             btn.innerHTML = 'Generate AI-Enhanced Document';
-             btn.classList.remove('ai-generating');
-             return;
+        function regenerateDocument() {
+            generateDocument();
+            showModal("🔄 Regenerating document...");
         }
 
-        // Mock a successful API call delay
-        await new Promise(resolve => setTimeout(resolve, 2000)); 
-        const mockGeneratedText = mockAIGenerator(currentDocumentType, data);
-        
-        // Update Metrics (Mocked to simulate server increment)
-        incrementMetric('generations');
-
-        // Display Results
-        generatedDocumentText = mockGeneratedText;
-        document.getElementById('letter').textContent = generatedDocumentText;
-        
-        document.getElementById('preview-section').classList.remove('hidden');
-        document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
-        
-        // Reset Download Buttons
-        document.getElementById('payBtn').style.display = 'block';
-        document.getElementById('downloadBtn').style.display = 'none';
-        document.getElementById('downloadBtn').disabled = true;
-
-        btn.disabled = false;
-        btn.innerHTML = 'Generate AI-Enhanced Document';
-        btn.classList.remove('ai-generating');
-        showModal("✅ AI Draft complete! Review and Download.");
-    }
-    
-    function regenerateDocument() {
-        generateDocument();
-        showModal("🔄 Regenerating document...");
-    }
-
-    // --- Core Generator Functions (Mocked for Client-Side Demo) ---
-    function collectFormData(docType) {
-        if (docType === 'resume') {
-            return {
-                name: document.getElementById('fullName').value,
-                email: document.getElementById('email').value,
-                experience: document.getElementById('experience').value,
-            };
+        // --- Core Generator Functions (Mocked for Client-Side Demo) ---
+        function collectFormData(docType) {
+            if (docType === 'resume') {
+                return {
+                    name: document.getElementById('fullName').value,
+                    email: document.getElementById('email').value,
+                    experience: document.getElementById('experience').value,
+                    education: document.getElementById('education').value,
+                    skills: document.getElementById('skills').value,
+                };
+            }
+            if (docType === 'coverLetter') {
+                return {
+                    name: document.getElementById('cl_fullName').value,
+                    jobTitle: document.getElementById('cl_jobTitle').value,
+                    companyName: document.getElementById('cl_companyName').value,
+                    experience: document.getElementById('cl_experience').value,
+                };
+            }
+            if (docType === 'resignation') {
+                return {
+                    name: document.getElementById('rl_fullName').value,
+                    position: document.getElementById('rl_position').value,
+                    lastDay: document.getElementById('rl_lastDay').value,
+                    reason: document.getElementById('rl_reason').value,
+                };
+            }
+            // NEW Academic Form Data
+            if (docType === 'academic') {
+                return {
+                    name: document.getElementById('ac_fullName').value,
+                    matricNumber: document.getElementById('ac_matricNumber').value,
+                    recipient: document.getElementById('ac_recipient').value,
+                    purpose: document.getElementById('ac_purpose').value,
+                    details: document.getElementById('ac_details').value,
+                };
+            }
+            return {};
         }
-        if (docType === 'coverLetter') {
-            return {
-                name: document.getElementById('cl_fullName').value,
-                jobTitle: document.getElementById('cl_jobTitle').value,
-                companyName: document.getElementById('cl_companyName').value,
-                experience: document.getElementById('cl_experience').value,
-            };
-        }
-        if (docType === 'resignation') {
-            return {
-                name: document.getElementById('rl_fullName').value,
-                position: document.getElementById('rl_position').value,
-                lastDay: document.getElementById('rl_lastDay').value,
-                reason: document.getElementById('rl_reason').value,
-            };
-        }
-        return {};
-    }
 
-    function mockAIGenerator(docType, data) {
-        if (docType === "resume") {
-            return `PROFESSIONAL RÉSUMÉ - AI GENERATED 
+        function mockAIGenerator(docType, data) {
+            if (docType === "resume") {
+                return `PROFESSIONAL RÉSUMÉ - AI GENERATED 
 ${'='.repeat(60)}
 ${data.name.toUpperCase()}
 ${data.email} | (Details Hidden)
@@ -373,10 +475,47 @@ SUMMARY
 A highly accomplished professional with experience in:
 ${data.experience.split('\n').map(line => `• ${line.trim()}`).join('\n')}
 
+EDUCATION
+${data.education}
+
+KEY SKILLS
+${data.skills}
 ---
 AI Note: This is a powerful, concise draft designed for maximum impact.`;
-        } else if (docType === "coverLetter") {
-             return `[Date]
+            } else if (docType === "academic") {
+                 const currentDate = new Date().toLocaleDateString('en-GB');
+                 const purposeTitle = data.purpose.replace(/_/g, ' ').toUpperCase();
+                 const recipientTitle = data.recipient === 'HOD' ? 'The Head of Department' : data.recipient === 'Dean' ? 'The Dean of Faculty' : data.recipient === 'Registrar' ? 'The University Registrar' : 'A Specific Lecturer';
+                 const salutation = data.recipient === 'Lecturer' ? 'Dear Sir/Madam,' : `Dear ${data.recipient},`;
+
+                 return `${currentDate}
+
+${recipientTitle}
+[Department/Faculty Name]
+[University Name]
+
+${salutation}
+
+SUBJECT: FORMAL REQUEST FOR ${purposeTitle} - ${data.matricNumber}
+
+I am writing to formally request the ${data.purpose.replace(/_/g, ' ')} concerning my academic records/status.
+
+My details are:
+Name: ${data.name}
+Matriculation Number: ${data.matricNumber}
+
+JUSTIFICATION / DETAILS
+${data.details}
+
+I sincerely apologize for any inconvenience this may cause and kindly request your favorable consideration and prompt action on this matter.
+
+Thank you.
+
+Yours faithfully,
+${data.name}
+${data.matricNumber}`;
+            } else if (docType === "coverLetter") {
+                 return `[Date]
 
 [Hiring Manager Name]
 [Company Name]
@@ -390,8 +529,8 @@ I look forward to discussing how my experience can benefit your team.
 
 Sincerely,
 ${data.name}`;
-        } else if (docType === "resignation") {
-             return `[Date]
+            } else if (docType === "resignation") {
+                 return `[Date]
 
 [Manager Name]
 [Company Name]
@@ -404,80 +543,100 @@ Thank you for the opportunity to work here.
 
 Sincerely,
 ${data.name}`;
-        }
-        return "AI could not generate document. Please provide more detailed input.";
-    }
-    
-    // --- Payment Handler (Mocked) ---
-    function handlePayment() {
-        showModal("💳 Initiating payment (Mock)...");
-        setTimeout(() => {
-            showModal("✅ Payment successful! PDF Download Enabled.");
-            
-            // Update Metrics (Mocked)
-            incrementMetric('income', parseInt(document.getElementById('documentPrice').value.replace('₦', '') || '500')); 
-            incrementMetric('downloads');
-
-            document.getElementById('payBtn').style.display = 'none';
-            document.getElementById('downloadBtn').style.display = 'block';
-            document.getElementById('downloadBtn').disabled = false;
-        }, 3000);
-    }
-    
-    // --- Metric Management (Mocked using localStorage) ---
-    function incrementMetric(key, value = 1) {
-        let current = parseInt(localStorage.getItem(STORAGE_PREFIX + key) || '0');
-        current += value;
-        localStorage.setItem(STORAGE_PREFIX + key, current);
-    }
-    
-    // --- Utility Functions ---
-    function validateForm(docType) { 
-      // Simplified validation for required fields
-      if (docType === "resume") {
-            return document.getElementById('fullName').value && document.getElementById('email').value;
-        } else if (docType === "coverLetter") {
-             return document.getElementById('cl_fullName').value && document.getElementById('cl_jobTitle').value;
-        } else if (docType === "resignation") {
-             return document.getElementById('rl_fullName').value && document.getElementById('rl_position').value;
-        }
-      return true; 
-    }
-    function downloadPDF() { showModal("📄 PDF downloaded!"); }
-    function printDocument() { window.print(); }
-    function emailDocument() { 
-        incrementMetric('emails');
-        showModal("📧 Email draft prepared!"); 
-    }
-    function showModal(message) {
-      const modal = document.createElement('div');
-      modal.className = 'modal';
-      modal.textContent = message;
-      document.body.appendChild(modal);
-      modal.offsetWidth; 
-      modal.classList.add('show');
-      setTimeout(() => {
-          modal.classList.remove('show');
-          setTimeout(() => modal.remove(), 500);
-      }, 4000);
-    }
-    
-    // Admin access cheat code
-    document.addEventListener('keydown', (e) => {
-        // Ctrl+Shift+A (or Cmd+Shift+A on Mac) for Admin Login
-        if (e.shiftKey && (e.ctrlKey || e.metaKey) && e.key === 'A') {
-            e.preventDefault();
-            const password = prompt("Admin Secret Code:");
-            if (password === 'jobadmin2025') { 
-                localStorage.setItem(STORAGE_PREFIX + 'admin_access', 'granted');
-                document.getElementById('adminLink').classList.remove('hidden');
-                showModal("🔑 Admin access granted! Link is in the top menu.");
-            } else if (password !== null) {
-                showModal("❌ Invalid Secret Code.");
             }
+            return "AI could not generate document. Please provide more detailed input.";
         }
-    });
+        
+        // --- Payment Handler (Mocked) ---
+        function handlePayment() {
+            showModal("💳 Initiating payment (Mock)...");
+            setTimeout(() => {
+                showModal("✅ Payment successful! PDF Download Enabled.");
+                
+                // Update Metrics (Mocked)
+                const priceText = document.getElementById('currentPrice').textContent.replace('₦', '');
+                incrementMetric('income', parseInt(priceText || '500')); 
+                incrementMetric('downloads');
 
-  </script>
+                document.getElementById('payBtn').style.display = 'none';
+                document.getElementById('downloadBtn').style.display = 'block';
+                document.getElementById('downloadBtn').disabled = false;
+            }, 3000);
+        }
+        
+        // --- Metric Management (Mocked using localStorage) ---
+        function incrementMetric(key, value = 1) {
+            let current = parseInt(localStorage.getItem(STORAGE_PREFIX + key) || '0');
+            current += value;
+            localStorage.setItem(STORAGE_PREFIX + key, current);
+        }
+        
+        // --- Utility Functions ---
+        function validateForm(docType) { 
+          // Simplified validation for required fields
+          if (docType === "resume") {
+                return document.getElementById('fullName').value && document.getElementById('email').value && document.getElementById('experience').value && document.getElementById('education').value && document.getElementById('skills').value;
+            } else if (docType === "coverLetter") {
+                 return document.getElementById('cl_fullName').value && document.getElementById('cl_jobTitle').value && document.getElementById('cl_companyName').value && document.getElementById('cl_experience').value;
+            } else if (docType === "resignation") {
+                 return document.getElementById('rl_fullName').value && document.getElementById('rl_position').value && document.getElementById('rl_lastDay').value;
+            } else if (docType === "academic") {
+                 return document.getElementById('ac_fullName').value && document.getElementById('ac_matricNumber').value && document.getElementById('ac_purpose').value && document.getElementById('ac_details').value;
+            }
+          return true; 
+        }
+
+        // Mock PDF Download
+        function downloadPDF() { 
+            showModal("📄 Generating PDF (Mock)...");
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const docTypeDisplay = document.getElementById('documentType').options[document.getElementById('documentType').selectedIndex].text;
+            const filename = `${docTypeDisplay.replace(/[^a-zA-Z0-9]/g, '_')}_Generated.pdf`;
+
+            doc.setFontSize(12);
+            // Split text to handle line breaks for PDF
+            const lines = doc.splitTextToSize(generatedDocumentText, 180);
+            doc.text(lines, 10, 10);
+            doc.save(filename);
+
+            showModal("✅ PDF downloaded successfully!");
+        }
+        function printDocument() { window.print(); }
+        function emailDocument() { 
+            incrementMetric('emails');
+            showModal("📧 Email draft prepared! (Mock Email Feature)"); 
+        }
+        function showModal(message) {
+          const modal = document.createElement('div');
+          modal.className = 'modal';
+          modal.textContent = message;
+          document.body.appendChild(modal);
+          modal.offsetWidth; 
+          modal.classList.add('show');
+          setTimeout(() => {
+              modal.classList.remove('show');
+              setTimeout(() => modal.remove(), 500);
+          }, 4000);
+        }
+        
+        // Admin access cheat code
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+Shift+A (or Cmd+Shift+A on Mac) for Admin Login
+            if (e.shiftKey && (e.ctrlKey || e.metaKey) && e.key === 'A') {
+                e.preventDefault();
+                const password = prompt("Admin Secret Code:");
+                if (password === 'jobadmin2025') { 
+                    localStorage.setItem(STORAGE_PREFIX + 'admin_access', 'granted');
+                    document.getElementById('adminLink').classList.remove('hidden');
+                    showModal("🔑 Admin access granted! Link is in the top menu.");
+                } else if (password !== null) {
+                    showModal("❌ Invalid Secret Code.");
+                }
+            }
+        });
+    </script>
 </body>
 </html>
