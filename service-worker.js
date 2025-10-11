@@ -2,6 +2,9 @@ const CACHE_NAME = 'jobletters-cache-v2';
 const urlsToCache = [
   '/',
   '/index.html',
+  '/how-it-works.html',
+  '/pricing.html',
+  '/contact.html',
   '/admin.html',
   '/manifest.json',
   // External libraries for core functionality
