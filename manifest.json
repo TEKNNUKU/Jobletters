@@ -4,6 +4,7 @@
   "description": "AI-Powered Job Document Generator",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f7f9fc",
   "theme_color": "#0047ab",
   "icons": [
