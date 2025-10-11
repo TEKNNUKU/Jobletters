@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚙️ Admin Dashboard - Jobletters.xyz</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+    <style>
+        /* Shared Styles */
+        :root {
+            --primary: #0047ab;
+            --accent: #ffd700;
+            --bg-color: #f7f9fc;
+            --card-bg: white;
+        }
+        body { font-family: 'Montserrat', sans-serif; margin: 0; background-color: var(--bg-color); color: #333; }
+        .container { max-width: 1100px; margin: 40px auto 80px; padding: 30px; border-radius: 12px; }
+        h1 { color: var(--primary); margin-bottom: 30px; text-align: center; }
+        
+        /* Dashboard Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .metric-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            border-left: 5px solid var(--primary);
+        }
+        .metric-card h3 { margin: 0 0 10px 0; font-size: 1.1em; color: #555; }
+        .metric-card p { font-size: 2em; font-weight: 700; color: var(--primary); margin: 0; }
+        .metric-card .icon { float: right; font-size: 3em; color: var(--accent); opacity: 0.6; }
+
+        /* Settings and Users */
+        .admin-section {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        .admin-section h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: var(--primary); }
+
+        /* Form/Input Styles */
+        input[type="text"], input[type="number"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        label { font-weight: 600; margin-top: 10px; display: block; }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        button:hover { background-color: #1e7e34; }
+        
+        /* Table Style */
+        .user-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .user-table th, .user-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        .user-table th { background-color: #f2f2f2; color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-screwdriver-wrench"></i> Jobletters.xyz Admin Dashboard</h1>
+        
+        <div class="dashboard-grid">
+            <div class="metric-card">
+                <i class="icon fas fa-chart-line"></i>
+                <h3>Total Revenue</h3>
+                <p id="totalRevenue">$0.00</p>
+            </div>
+            <div class="metric-card">
+                <i class="icon fas fa-file-pdf"></i>
+                <h3>PDF Downloads</h3>
+                <p id="pdfDownloads">0</p>
+            </div>
+            <div class="metric-card">
+                <i class="icon fas fa-envelope-open-text"></i>
+                <h3>AI Generations</h3>
+                <p id="aiGenerations">0</p>
+            </div>
+            <div class="metric-card">
+                <i class="icon fas fa-users"></i>
+                <h3>Total Users</h3>
+                <p id="totalUsers">0</p>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h2><i class="fas fa-cogs"></i> Global Settings</h2>
+            
+            <label for="aiApiKey">AI API Key (Server-Side)</label>
+            <input type="text" id="aiApiKey" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx" value="[MOCK_SERVER_KEY_1234]" disabled>
+            <p style="font-size: 0.8em; color: #f44336;">*This is sensitive data. Key changes must be verified on the server.</p>
+            <button onclick="updateApiKey()" style="background-color: #007bff;"><i class="fas fa-key"></i> Update API Key</button>
+
+            <label for="documentPrice">Document Download Price (NGN)</label>
+            <input type="number" id="documentPrice" value="500" min="100">
+            <button onclick="updatePrice()"><i class="fas fa-dollar-sign"></i> Update Price</button>
+            
+            <label for="defaultAiProvider">Default AI Provider</label>
+            <select id="defaultAiProvider">
+                <option value="openai">OpenAI (GPT-4 Turbo)</option>
+                <option value="anthropic">Anthropic (Claude 3.5)</option>
+                <option value="google">Google (Gemini Pro)</option>
+            </select>
+            <button onclick="updateProvider()"><i class="fas fa-robot"></i> Update Default Provider</button>
+        </div>
+
+        <div class="admin-section">
+            <h2><i class="fas fa-users"></i> User and Transaction Data</h2>
+            <p>Recent Transactions & User Emails:</p>
+            <table class="user-table" id="transactionTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Email</th>
+                        <th>Amount</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+
+    </div>
+    
+    <script>
+        // MOCK DATA (In a real app, this is fetched from a secure server API)
+        const MOCK_METRICS = {
+            revenue: 250000,
+            downloads: 500,
+            generations: 1200,
+            users: 850
+        };
+
+        const MOCK_TRANSACTIONS = [
+            { id: 1001, email: 'user1@example.com', amount: 500, type: 'CL', status: 'Paid', date: '2025-10-01' },
+            { id: 1002, email: 'user2@example.com', amount: 500, type: 'RESUME', status: 'Paid', date: '2025-10-02' },
+            { id: 1003, email: 'user3@example.com', amount: 500, type: 'RESIGNATION', status: 'Failed', date: '2025-10-03' }
+        ];
+
+        function loadDashboard() {
+            // Populate Metrics
+            document.getElementById('totalRevenue').textContent = '₦' + MOCK_METRICS.revenue.toLocaleString();
+            document.getElementById('pdfDownloads').textContent = MOCK_METRICS.downloads.toLocaleString();
+            document.getElementById('aiGenerations').textContent = MOCK_METRICS.generations.toLocaleString();
+            document.getElementById('totalUsers').textContent = MOCK_METRICS.users.toLocaleString();
+
+            // Populate Transactions Table
+            const tableBody = document.getElementById('transactionTable').querySelector('tbody');
+            tableBody.innerHTML = ''; // Clear existing
+            MOCK_TRANSACTIONS.forEach(tx => {
+                const row = tableBody.insertRow();
+                row.insertCell().textContent = tx.id;
+                row.insertCell().textContent = tx.email;
+                row.insertCell().textContent = '₦' + tx.amount;
+                row.insertCell().textContent = tx.type;
+                row.insertCell().textContent = tx.status;
+                row.insertCell().textContent = tx.date;
+            });
+        }
+        
+        // --- Mock Admin Functions (would call a secure API endpoint) ---
+        function updateApiKey() {
+            // In a real app: Send API key to backend /settings endpoint
+            alert("API Key update functionality is server-side. Contacted secure backend!");
+        }
+
+        function updatePrice() {
+            const newPrice = document.getElementById('documentPrice').value;
+            // In a real app: Send newPrice to backend /settings endpoint
+            alert(`Document price updated to ₦${newPrice}. (Server-side mock)`);
+            document.getElementById('documentPrice').value = newPrice;
+        }
+        
+        function updateProvider() {
+            const newProvider = document.getElementById('defaultAiProvider').value;
+            // In a real app: Send newProvider to backend /settings endpoint
+            alert(`Default AI Provider updated to ${newProvider}. (Server-side mock)`);
+        }
+
+        // Check Access on Load (Simple Client-Side Check)
+        if (localStorage.getItem('admin_access') !== 'granted') {
+            document.body.innerHTML = '<h1>Access Denied</h1><p style="text-align: center;">You must enter the secret code on the homepage to access this dashboard.</p>';
+        } else {
+            loadDashboard();
+        }
+    </script>
+</body>
+</html>
