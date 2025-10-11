@@ -1,13 +1,13 @@
-const CACHE_NAME = 'jobletters-cache-v1';
+const CACHE_NAME = 'jobletters-cache-v2';
 const urlsToCache = [
   '/',
   '/index.html',
+  '/admin.html', // Caching the admin page as well
   '/manifest.json',
-  // Add other necessary assets like the jspdf library
+  // External libraries for core functionality
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap'
-  // '/images/icon-192x192.png', // Add your icon paths
+  'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap'
 ];
 
 self.addEventListener('install', event => {
@@ -24,17 +24,15 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Cache hit - return response
         if (response) {
           return response;
         }
-        // Not in cache - fetch from network
         return fetch(event.request);
       })
   );
 });
 
-// Activate new service worker and clear old caches
+// Clean up old caches
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
