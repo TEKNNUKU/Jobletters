@@ -8,7 +8,6 @@
   <meta name="description" content="AI-powered generator for professional Résumés, Cover Letters, and Resignation Letters. Create, preview, and download your documents with ease.">
   <meta name="keywords" content="AI resume generator, AI cover letter, resignation letter, job documents, CV maker, professional documents, PWA">
   <meta name="author" content="Jobletters.xyz">
-  <link rel="canonical" href="https://jobletters.xyz">
 
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0047ab">
@@ -31,14 +30,7 @@
       --gradient-ai: linear-gradient(135deg, var(--secondary) 0%, #764ba2 100%);
     }
     * { box-sizing: border-box; scroll-behavior: smooth; }
-    body {
-      font-family: 'Montserrat', sans-serif;
-      margin: 0;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
+    body { font-family: 'Montserrat', sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-color); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
     a { color: var(--primary); text-decoration: none; transition: color 0.3s ease; }
     a:hover { color: #0056b3; }
     .hidden { display: none !important; }
@@ -46,18 +38,7 @@
     /* ------------------------------------- */
     /* HEADER & NAV */
     /* ------------------------------------- */
-    header {
-      background: var(--gradient-main);
-      color: white;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 20px;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
+    header { background: var(--gradient-main); color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
     .logo { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
     .logo i { color: var(--accent); margin-right: 8px; }
     .ai-badge { background: linear-gradient(135deg, #ff6b6b, var(--accent)); padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; color: #000; animation: pulse 2s infinite; }
@@ -79,20 +60,13 @@
     /* ------------------------------------- */
     /* CONTAINER & TYPOGRAPHY */
     /* ------------------------------------- */
-    .container {
-      max-width: 800px;
-      background: var(--card-bg);
-      margin: 40px auto 80px;
-      padding: 30px 35px;
-      border-radius: 12px;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.07);
-    }
+    .container { max-width: 800px; background: var(--card-bg); margin: 40px auto 80px; padding: 30px 35px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.07); }
     h1 { font-weight: 700; color: var(--primary); margin-bottom: 12px; }
     h3 { margin-top: 35px; color: var(--primary); }
     p { line-height: 1.6; }
 
     /* ------------------------------------- */
-    /* INFO BANNERS (AI Config removed) */
+    /* INFO BANNERS */
     /* ------------------------------------- */
     .info-banner { background: var(--gradient-ai); color: white; padding: 15px 20px; border-radius: 8px; margin: 20px 0; display: flex; align-items: center; gap: 15px; }
     .info-banner i { font-size: 24px; }
@@ -192,8 +166,33 @@
             <input type="text" id="skills" placeholder="e.g. JavaScript, React, Python, Data Analysis, SEO" aria-label="Skills" required />
         </div>
 
-        <div id="coverLetterForm" class="hidden">...</div>
-        <div id="resignationForm" class="hidden">...</div>
+        <div id="coverLetterForm" class="hidden">
+            <h3>Cover Letter Details</h3>
+            <label for="cl_fullName">Your Full Name *</label>
+            <input type="text" id="cl_fullName" placeholder="e.g. Jane Doe" aria-label="Your Full Name" required />
+            <label for="cl_jobTitle">Job Title You Are Applying For *</label>
+            <input type="text" id="cl_jobTitle" placeholder="e.g. Senior Software Engineer" aria-label="Job Title" required />
+            <label for="cl_companyName">Company Name *</label>
+            <input type="text" id="cl_companyName" placeholder="e.g. Tech Innovations Inc." aria-label="Company Name" required />
+            <label for="cl_experience">Your Relevant Experience *</label>
+            <textarea id="cl_experience" placeholder="Briefly describe your relevant work experience and achievements..." aria-label="Your Experience" required></textarea>
+        </div>
+        
+        <div id="resignationForm" class="hidden">
+            <h3>Resignation Letter Details</h3>
+            <label for="rl_fullName">Your Full Name *</label>
+            <input type="text" id="rl_fullName" placeholder="e.g. Jane Doe" aria-label="Your Full Name" required />
+            <label for="rl_position">Your Position *</label>
+            <input type="text" id="rl_position" placeholder="e.g. Senior Marketing Manager" aria-label="Your Position" required />
+            <label for="rl_lastDay">Last Working Day *</label>
+            <input type="date" id="rl_lastDay" aria-label="Last Working Day" required />
+            <label for="rl_reason">Reason for Resignation *</label>
+            <select id="rl_reason" aria-label="Reason for Resignation" required>
+                <option value="better_opportunity">Better Career Opportunity</option>
+                <option value="personal">Personal Reasons</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
     </div>
     
     <button class="primary-btn" id="generateBtn" onclick="generateDocument()">Generate AI-Enhanced Document</button>
@@ -232,7 +231,7 @@
     const STORAGE_PREFIX = 'jobletters_';
     let currentDocumentType = "";
     let generatedDocumentText = "";
-    
+
     // --- PWA Service Worker Registration ---
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -244,6 +243,11 @@
       });
     }
 
+    // --- FIX 1: Menu Toggle Script ---
+    const hamburger = document.getElementById('hamburger');
+    const navMenu = document.getElementById('navMenu');
+    hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
+
     // Check for admin access and load price on startup
     (function initApp() {
         if (localStorage.getItem(STORAGE_PREFIX + 'admin_access') === 'granted') {
@@ -253,6 +257,23 @@
         const price = localStorage.getItem(STORAGE_PREFIX + 'price') || '₦500';
         document.getElementById('currentPrice').textContent = price;
     })();
+
+    // --- FIX 2: Form Display Logic ---
+    function showForm(docType) {
+      const forms = document.querySelectorAll('#formsContainer > div');
+      forms.forEach(form => form.classList.add('hidden'));
+
+      if (docType) {
+          const formId = docType + 'Form';
+          document.getElementById(formId).classList.remove('hidden');
+          document.getElementById('generateBtn').classList.remove('hidden');
+          document.getElementById('preview-section').classList.add('hidden');
+      } else {
+          document.getElementById('generateBtn').classList.add('hidden');
+          document.getElementById('preview-section').classList.add('hidden');
+      }
+      currentDocumentType = docType;
+    }
 
 
     async function generateDocument() {
@@ -273,8 +294,6 @@
         const data = collectFormData(currentDocumentType);
         
         // --- SECURE MOCK API CALL (Simulating server-side AI processing) ---
-        
-        // 1. Check if Admin has configured the AI Key on the server (mocked as localStorage)
         const adminKey = localStorage.getItem(STORAGE_PREFIX + 'api_key');
         if (!adminKey) {
              showModal("🔑 System error: AI Key not configured by Admin. Cannot generate document.");
@@ -284,16 +303,17 @@
              return;
         }
 
-        // 2. Mock a successful API call delay
+        // Mock a successful API call delay
         await new Promise(resolve => setTimeout(resolve, 2000)); 
         const mockGeneratedText = mockAIGenerator(currentDocumentType, data);
         
-        // 3. Update Metrics (Mocked to simulate server increment)
+        // Update Metrics (Mocked to simulate server increment)
         incrementMetric('generations');
 
-        // 4. Display Results
+        // Display Results
         generatedDocumentText = mockGeneratedText;
         document.getElementById('letter').textContent = generatedDocumentText;
+        
         document.getElementById('preview-section').classList.remove('hidden');
         document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
         
@@ -309,14 +329,12 @@
     }
     
     function regenerateDocument() {
-        // Simple regeneration by calling the main function again
         generateDocument();
         showModal("🔄 Regenerating document...");
     }
 
     // --- Core Generator Functions (Mocked for Client-Side Demo) ---
     function collectFormData(docType) {
-        // Simplified collector (should retrieve all fields)
         if (docType === 'resume') {
             return {
                 name: document.getElementById('fullName').value,
@@ -324,42 +342,80 @@
                 experience: document.getElementById('experience').value,
             };
         }
+        if (docType === 'coverLetter') {
+            return {
+                name: document.getElementById('cl_fullName').value,
+                jobTitle: document.getElementById('cl_jobTitle').value,
+                companyName: document.getElementById('cl_companyName').value,
+                experience: document.getElementById('cl_experience').value,
+            };
+        }
+        if (docType === 'resignation') {
+            return {
+                name: document.getElementById('rl_fullName').value,
+                position: document.getElementById('rl_position').value,
+                lastDay: document.getElementById('rl_lastDay').value,
+                reason: document.getElementById('rl_reason').value,
+            };
+        }
         return {};
     }
 
     function mockAIGenerator(docType, data) {
-        // MOCK AI TEXT GENERATION
         if (docType === "resume") {
-            return `PROFESSIONAL RÉSUMÉ - AI GENERATED (Configured by Admin)
-
+            return `PROFESSIONAL RÉSUMÉ - AI GENERATED 
 ${'='.repeat(60)}
 ${data.name.toUpperCase()}
-${data.email} | (Contact Details Removed for Privacy)
+${data.email} | (Details Hidden)
 ${'='.repeat(60)}
 
 SUMMARY
-A highly accomplished professional with a track record of driving results and innovating processes, as detailed in the experience below.
-
-WORK EXPERIENCE
+A highly accomplished professional with experience in:
 ${data.experience.split('\n').map(line => `• ${line.trim()}`).join('\n')}
 
 ---
 AI Note: This is a powerful, concise draft designed for maximum impact.`;
+        } else if (docType === "coverLetter") {
+             return `[Date]
+
+[Hiring Manager Name]
+[Company Name]
+[Company Address]
+
+Dear [Hiring Manager],
+
+I am writing to express my enthusiastic interest in the ${data.jobTitle} position at ${data.companyName}. With a background in ${data.experience.split('\n')[0].substring(0, 50)}..., I possess the necessary skills to excel.
+
+I look forward to discussing how my experience can benefit your team.
+
+Sincerely,
+${data.name}`;
+        } else if (docType === "resignation") {
+             return `[Date]
+
+[Manager Name]
+[Company Name]
+
+Dear [Manager Name],
+
+Please accept this letter as formal notification that I am resigning from my position as ${data.position}, effective ${data.lastDay}. My reason for leaving is ${data.reason}.
+
+Thank you for the opportunity to work here.
+
+Sincerely,
+${data.name}`;
         }
         return "AI could not generate document. Please provide more detailed input.";
     }
     
     // --- Payment Handler (Mocked) ---
     function handlePayment() {
-        // In a real application: Start payment gateway integration (Flutterwave, Stripe)
-        
-        // Mock success after a delay and update metrics
         showModal("💳 Initiating payment (Mock)...");
         setTimeout(() => {
             showModal("✅ Payment successful! PDF Download Enabled.");
             
             // Update Metrics (Mocked)
-            incrementMetric('income', 500); // NGN 500
+            incrementMetric('income', parseInt(document.getElementById('documentPrice').value.replace('₦', '') || '500')); 
             incrementMetric('downloads');
 
             document.getElementById('payBtn').style.display = 'none';
@@ -377,20 +433,22 @@ AI Note: This is a powerful, concise draft designed for maximum impact.`;
     
     // --- Utility Functions ---
     function validateForm(docType) { 
+      // Simplified validation for required fields
       if (docType === "resume") {
-            const name = document.getElementById('fullName').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const experience = document.getElementById('experience').value.trim();
-            const education = document.getElementById('education').value.trim();
-            const skills = document.getElementById('skills').value.trim();
-            return name && email && experience && education && skills;
+            return document.getElementById('fullName').value && document.getElementById('email').value;
+        } else if (docType === "coverLetter") {
+             return document.getElementById('cl_fullName').value && document.getElementById('cl_jobTitle').value;
+        } else if (docType === "resignation") {
+             return document.getElementById('rl_fullName').value && document.getElementById('rl_position').value;
         }
       return true; 
     }
     function downloadPDF() { showModal("📄 PDF downloaded!"); }
     function printDocument() { window.print(); }
-    function emailDocument() { showModal("📧 Email draft prepared!"); }
-    function showForm(docType) { /* ... form display logic ... */ currentDocumentType = docType; }
+    function emailDocument() { 
+        incrementMetric('emails');
+        showModal("📧 Email draft prepared!"); 
+    }
     function showModal(message) {
       const modal = document.createElement('div');
       modal.className = 'modal';
@@ -404,17 +462,18 @@ AI Note: This is a powerful, concise draft designed for maximum impact.`;
       }, 4000);
     }
     
-    // Admin access cheat code (CSR: Client-Side Rendering)
+    // Admin access cheat code
     document.addEventListener('keydown', (e) => {
         // Ctrl+Shift+A (or Cmd+Shift+A on Mac) for Admin Login
         if (e.shiftKey && (e.ctrlKey || e.metaKey) && e.key === 'A') {
+            e.preventDefault();
             const password = prompt("Admin Secret Code:");
             if (password === 'jobadmin2025') { 
                 localStorage.setItem(STORAGE_PREFIX + 'admin_access', 'granted');
                 document.getElementById('adminLink').classList.remove('hidden');
-                showModal("🔑 Admin access granted!");
+                showModal("🔑 Admin access granted! Link is in the top menu.");
             } else if (password !== null) {
-                showModal("❌ Invalid Secret Code. Try Ctrl+Shift+A again.");
+                showModal("❌ Invalid Secret Code.");
             }
         }
     });
