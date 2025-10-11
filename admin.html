@@ -121,10 +121,15 @@
     <script>
         const STORAGE_PREFIX = 'jobletters_';
         
-        // MOCK TRANSACTION DATA STRUCTURE
         let mockTransactions = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'transactions') || '[]');
         
         function loadDashboard() {
+            // Check Access
+            if (localStorage.getItem(STORAGE_PREFIX + 'admin_access') !== 'granted') {
+                document.body.innerHTML = '<div class="container" style="text-align: center;"><h1>Access Denied</h1><p>You must enter the secret code on the homepage (Ctrl+Shift+A) to access this dashboard.</p><a href="/index.html">Go Home</a></div>';
+                return;
+            }
+
             // Load Metrics
             document.getElementById('totalIncome').textContent = '₦' + (parseInt(localStorage.getItem(STORAGE_PREFIX + 'income') || '0')).toLocaleString();
             document.getElementById('pdfDownloads').textContent = (parseInt(localStorage.getItem(STORAGE_PREFIX + 'downloads') || '0')).toLocaleString();
@@ -141,7 +146,6 @@
             const tableBody = document.getElementById('transactionTable').querySelector('tbody');
             tableBody.innerHTML = ''; 
             
-            // Sort to show newest first
             const sortedTx = mockTransactions.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
 
             sortedTx.forEach(tx => {
@@ -191,7 +195,6 @@
                          localStorage.removeItem(key);
                      }
                  });
-                 // Re-initialize mock transactions (if you want default data back)
                  mockTransactions = [];
                  localStorage.setItem(STORAGE_PREFIX + 'transactions', '[]');
                  alert("🛑 All mock data cleared.");
@@ -199,29 +202,23 @@
              }
         }
 
-        // Check Access on Load
-        if (localStorage.getItem(STORAGE_PREFIX + 'admin_access') !== 'granted') {
-            document.body.innerHTML = '<div class="container" style="text-align: center;"><h1>Access Denied</h1><p>You must enter the secret code on the homepage (Ctrl+Shift+A) to access this dashboard.</p><a href="/index.html">Go Home</a></div>';
-        } else {
-            // Mock transaction data initialization (if empty, populate with some defaults)
+        // Mock default data initialization
+        (function initAdminData() {
             if (mockTransactions.length === 0) {
                  mockTransactions = [
-                    { email: 'admin@jobletters.xyz', type: 'SETUP', amount: 0, status: 'N/A', date: new Date().toISOString() },
                     { email: 'user1@example.com', type: 'RESUME', amount: 500, status: 'Paid', date: new Date(Date.now() - 3600000).toISOString() },
                     { email: 'user2@example.com', type: 'COVERLETTER', amount: 500, status: 'Paid', date: new Date(Date.now() - 7200000).toISOString() },
                     { email: 'user3@example.com', type: 'RESIGNATION', amount: 500, status: 'Failed', date: new Date(Date.now() - 10800000).toISOString() }
                 ];
                  localStorage.setItem(STORAGE_PREFIX + 'transactions', JSON.stringify(mockTransactions));
             }
-            // Mock default metrics if they don't exist
              if (!localStorage.getItem(STORAGE_PREFIX + 'downloads')) localStorage.setItem(STORAGE_PREFIX + 'downloads', '20');
              if (!localStorage.getItem(STORAGE_PREFIX + 'generations')) localStorage.setItem(STORAGE_PREFIX + 'generations', '50');
              if (!localStorage.getItem(STORAGE_PREFIX + 'income')) localStorage.setItem(STORAGE_PREFIX + 'income', '10000');
              if (!localStorage.getItem(STORAGE_PREFIX + 'emails')) localStorage.setItem(STORAGE_PREFIX + 'emails', '10');
+        })();
 
-
-            loadDashboard();
-        }
+        loadDashboard();
     </script>
 </body>
 </html>
