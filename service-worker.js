@@ -2,7 +2,7 @@ const CACHE_NAME = 'jobletters-cache-v2';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/admin.html', // Caching the admin page as well
+  '/admin.html',
   '/manifest.json',
   // External libraries for core functionality
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
