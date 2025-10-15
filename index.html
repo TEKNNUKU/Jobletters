@@ -13,6 +13,30 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
 
+    <script type="module">
+      // Import the functions you need from the SDKs you need
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
+      // TODO: Add SDKs for Firebase products that you want to use
+      // https://firebase.google.com/docs/web/setup#available-libraries
+
+      // Your web app's Firebase configuration
+      // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+      const firebaseConfig = {
+        apiKey: "AIzaSyDLGrQQd2SEppdZooI7VWV7I7h4l_QAdZs",
+        authDomain: "jobletters-3c5ea.firebaseapp.com",
+        projectId: "jobletters-3c5ea",
+        storageBucket: "jobletters-3c5ea.firebasestorage.app",
+        messagingSenderId: "473489426093",
+        appId: "1:473489426093:web:fae4d21f759d14837aa824",
+        measurementId: "G-TR8CQ7EP54"
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+    </script>
+
     <style>
         /* ------------------------------------- */
         /* Global Styles and Utilities */
@@ -99,7 +123,25 @@
         /* Preview Section */
         #preview-section { margin-top: 40px; background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         #preview-section h2 { color: #28a745; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
-        #letter { white-space: pre-wrap; font-family: monospace; background: #fafafa; padding: 15px; border: 1px dashed #ccc; border-radius: 6px; max-height: 400px; overflow-y: auto; margin-bottom: 20px; }
+        
+        /* DRAFT SECURITY: Disable Copying and Selection (New) */
+        #letter { 
+            white-space: pre-wrap; 
+            font-family: monospace; 
+            background: #fafafa; 
+            padding: 15px; 
+            border: 1px dashed #ccc; 
+            border-radius: 6px; 
+            max-height: 400px; 
+            overflow-y: auto; 
+            margin-bottom: 20px;
+            /* Disable Selection and Copying */
+            -webkit-user-select: none;  /* Safari */
+            -moz-user-select: none;     /* Firefox */
+            -ms-user-select: none;      /* IE10+ */
+            user-select: none;          /* Standard */
+            cursor: default;
+        }
         
         .preview-actions { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
         .preview-actions button, .preview-actions a { flex: 1; min-width: 150px; max-width: 250px; font-size: 16px; }
@@ -109,6 +151,10 @@
         #downloadBtn { background: linear-gradient(45deg, #28a745, #1e7e34); display: none; }
         #downloadBtn:disabled { background: #ccc; cursor: not-allowed; }
         #regenerateBtn { background-color: #007bff; }
+
+        /* Disable buttons on the final draft until payment */
+        .disabled-action { opacity: 0.6; cursor: not-allowed !important; }
+
         
         /* Spinner */
         .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid white; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
@@ -241,24 +287,22 @@
 
         <section id="preview-section" class="hidden">
             <h2><i class="fas fa-file-alt"></i> Document Preview (AI Draft)</h2>
-            <div id="letter"></div>
-            
-            <div class="preview-actions">
+            <div id="letter" oncontextmenu="return false;"></div> <div class="preview-actions">
                 <button id="regenerateBtn" class="button" onclick="regenerateDocument()">
                     <i class="fas fa-sync-alt"></i> Regenerate
                 </button>
                 <button id="payBtn" class="button" onclick="handlePayment()">
                     <i class="fas fa-credit-card"></i> Pay <span id="currentPrice">₦500</span> & Download
                 </button>
-                <button id="downloadBtn" class="button" onclick="downloadPDF()">
+                <button id="downloadBtn" class="button disabled-action" onclick="downloadPDF()" disabled>
                     <i class="fas fa-download"></i> Download PDF
                 </button>
             </div>
             <div style="text-align: center; margin-top: 15px; font-size: 0.9em; color: #555;">
-                <button class="button" style="background-color: #f8f9fa; color: var(--text-color); margin-top: 0;" onclick="emailDocument()">
+                <button id="emailBtn" class="button disabled-action" style="background-color: #f8f9fa; color: var(--text-color); margin-top: 0;" onclick="emailDocument()" disabled>
                     <i class="fas fa-envelope-open-text"></i> Email Document
                 </button>
-                <button class="button" style="background-color: #f8f9fa; color: var(--text-color); margin-top: 0;" onclick="printDocument()">
+                <button id="printBtn" class="button disabled-action" style="background-color: #f8f9fa; color: var(--text-color); margin-top: 0;" onclick="printDocument()" disabled>
                     <i class="fas fa-print"></i> Print Draft
                 </button>
             </div>
@@ -275,8 +319,13 @@
 
     <script>
         const STORAGE_PREFIX = 'jobletters_';
+        // Mock data key for default operation (prevents the admin error)
+        const DEFAULT_MOCK_API_KEY = 'sk-jobletters-default-mock-key'; 
+        const FLUTTERWAVE_PAY_LINK = "https://flutterwave.com/pay/uwoq2lwqfocj";
+
         let currentDocumentType = "";
         let generatedDocumentText = "";
+        let isPaid = false; // New state variable for payment
 
         // --- PWA Service Worker Registration ---
         if ('serviceWorker' in navigator) {
@@ -306,19 +355,44 @@
         }
         
         function saveData(data) {
+            // Retrieve existing saved users array or initialize an empty one
+            let savedUsers = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'savedUsers') || '[]');
+            
+            // Collect the core contact info for reuse and admin mock
+            const contactData = {
+                name: data.name,
+                email: data.email,
+                lastGenerated: new Date().toISOString()
+            };
+
+            // 1. Handle Contact Auto-fill Save
             if (document.getElementById('saveDataCheckbox')?.checked) {
                 localStorage.setItem(STORAGE_PREFIX + 'saveDataCheckbox', 'true');
-                localStorage.setItem(STORAGE_PREFIX + 'fullName', data.name);
-                localStorage.setItem(STORAGE_PREFIX + 'email', data.email);
+                localStorage.setItem(STORAGE_PREFIX + 'fullName', contactData.name);
+                localStorage.setItem(STORAGE_PREFIX + 'email', contactData.email);
             } else {
                 localStorage.removeItem(STORAGE_PREFIX + 'saveDataCheckbox');
                 localStorage.removeItem(STORAGE_PREFIX + 'fullName');
                 localStorage.removeItem(STORAGE_PREFIX + 'email');
             }
+
+            // 2. Save user for Admin Mock Data Table (using email as unique key)
+            const existingIndex = savedUsers.findIndex(user => user.email === contactData.email);
+            if (existingIndex > -1) {
+                savedUsers[existingIndex] = contactData;
+            } else {
+                savedUsers.push(contactData);
+            }
+            localStorage.setItem(STORAGE_PREFIX + 'savedUsers', JSON.stringify(savedUsers));
         }
 
         // Check for admin access and load price on startup
         (function initApp() {
+            // FIX 1: Set default mock API key if none is found
+            if (!localStorage.getItem(STORAGE_PREFIX + 'api_key')) {
+                localStorage.setItem(STORAGE_PREFIX + 'api_key', DEFAULT_MOCK_API_KEY);
+            }
+
             if (localStorage.getItem(STORAGE_PREFIX + 'admin_access') === 'granted') {
                 document.getElementById('adminLink').classList.remove('hidden');
             }
@@ -328,6 +402,9 @@
             
             // Load saved contact details immediately
             loadSavedData();
+            
+            // DRAFT SECURITY: Disable right-click on the preview area globally
+            document.getElementById('letter').oncontextmenu = () => false; 
         })();
 
         // --- Form Display Logic ---
@@ -345,9 +422,11 @@
               document.getElementById('preview-section').classList.add('hidden');
           }
           currentDocumentType = docType;
+          isPaid = false; // Reset payment status when changing doc type
+          updateDownloadButtons(false);
         }
 
-        // --- NEW: Academic Prompt Helper ---
+        // --- Academic Prompt Helper ---
         function updateAcademicPrompt(purpose) {
             const label = document.getElementById('ac_details_label');
             if (purpose === 'course_change') {
@@ -361,6 +440,7 @@
             }
         }
 
+        // --- Core Generation Logic ---
         async function generateDocument() {
             const btn = document.getElementById('generateBtn');
             btn.disabled = true;
@@ -378,15 +458,16 @@
 
             const data = collectFormData(currentDocumentType);
             
-            // --- Save Contact Data (NEW) ---
-            if (currentDocumentType === 'resume') {
+            // Save Contact Data (NEW: Saves user for admin mock table)
+            if (currentDocumentType === 'resume' || currentDocumentType === 'coverLetter') {
                  saveData(data);
             }
 
-            // --- SECURE MOCK API CALL (Simulating server-side AI processing) ---
+            // --- SECURE MOCK API CALL CHECK ---
             const adminKey = localStorage.getItem(STORAGE_PREFIX + 'api_key');
-            if (!adminKey) {
-                 showModal("🔑 System error: AI Key not configured by Admin. Cannot generate document.");
+            if (!adminKey || adminKey === '') {
+                 // FIX: This error is now rare due to the default key, but kept for robustness
+                 showModal("🔑 System error: AI Key not configured. Cannot generate document.");
                  btn.disabled = false;
                  btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
                  btn.classList.remove('ai-generating');
@@ -397,7 +478,7 @@
             await new Promise(resolve => setTimeout(resolve, 2000)); 
             const mockGeneratedText = mockAIGenerator(currentDocumentType, data);
             
-            // Update Metrics (Mocked to simulate server increment)
+            // Update Metrics
             incrementMetric('generations');
 
             // Display Results
@@ -407,10 +488,9 @@
             document.getElementById('preview-section').classList.remove('hidden');
             document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
             
-            // Reset Download Buttons
-            document.getElementById('payBtn').style.display = 'block';
-            document.getElementById('downloadBtn').style.display = 'none';
-            document.getElementById('downloadBtn').disabled = true;
+            // Reset payment status and buttons
+            isPaid = false;
+            updateDownloadButtons(false);
 
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
@@ -423,7 +503,63 @@
             showModal("🔄 Regenerating document...");
         }
 
-        // --- Core Generator Functions (Mocked for Client-Side Demo) ---
+        // --- Download Button Control Function (New) ---
+        function updateDownloadButtons(paidStatus) {
+            isPaid = paidStatus;
+            const payBtn = document.getElementById('payBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const emailBtn = document.getElementById('emailBtn');
+            const printBtn = document.getElementById('printBtn');
+
+            if (paidStatus) {
+                // If paid, enable final actions
+                payBtn.style.display = 'none';
+                downloadBtn.style.display = 'block';
+                downloadBtn.disabled = false;
+                downloadBtn.classList.remove('disabled-action');
+                emailBtn.disabled = false;
+                emailBtn.classList.remove('disabled-action');
+                printBtn.disabled = false;
+                printBtn.classList.remove('disabled-action');
+            } else {
+                // If not paid, hide download and show pay button (and disable others)
+                payBtn.style.display = 'block';
+                downloadBtn.style.display = 'none';
+                downloadBtn.disabled = true;
+                downloadBtn.classList.add('disabled-action');
+                emailBtn.disabled = true;
+                emailBtn.classList.add('disabled-action');
+                printBtn.disabled = true;
+                printBtn.classList.add('disabled-action');
+            }
+        }
+        
+        // --- Payment Handler (Updated for Flutterwave) ---
+        function handlePayment() {
+            showModal("💳 Redirecting to Flutterwave for secure payment...");
+            
+            // Instead of a mock timeout, we redirect to the actual payment link
+            // For this client-side mock, we simulate success after the user returns
+            
+            // Open payment link in a new tab
+            window.open(FLUTTERWAVE_PAY_LINK, '_blank');
+            
+            // Mock a successful return from payment after a delay
+            setTimeout(() => {
+                showModal("✅ Payment simulated successfully! Document unlocked.");
+                
+                // Update Metrics (Mocked)
+                const priceText = document.getElementById('currentPrice').textContent.replace('₦', '');
+                incrementMetric('income', parseInt(priceText || '500')); 
+                incrementMetric('downloads');
+
+                // Enable all final action buttons
+                updateDownloadButtons(true);
+
+            }, 5000); // 5 second delay to simulate user interaction/return from payment
+        }
+        
+        // --- Core Generator Functions (Unchanged) ---
         function collectFormData(docType) {
             if (docType === 'resume') {
                 return {
@@ -437,6 +573,7 @@
             if (docType === 'coverLetter') {
                 return {
                     name: document.getElementById('cl_fullName').value,
+                    email: document.getElementById('cl_email') ? document.getElementById('cl_email').value : '', // Fallback for email if not on form
                     jobTitle: document.getElementById('cl_jobTitle').value,
                     companyName: document.getElementById('cl_companyName').value,
                     experience: document.getElementById('cl_experience').value,
@@ -450,7 +587,6 @@
                     reason: document.getElementById('rl_reason').value,
                 };
             }
-            // NEW Academic Form Data
             if (docType === 'academic') {
                 return {
                     name: document.getElementById('ac_fullName').value,
@@ -464,6 +600,7 @@
         }
 
         function mockAIGenerator(docType, data) {
+            // ... (Your previous mockAIGenerator content) ...
             if (docType === "resume") {
                 return `PROFESSIONAL RÉSUMÉ - AI GENERATED 
 ${'='.repeat(60)}
@@ -547,23 +684,6 @@ ${data.name}`;
             return "AI could not generate document. Please provide more detailed input.";
         }
         
-        // --- Payment Handler (Mocked) ---
-        function handlePayment() {
-            showModal("💳 Initiating payment (Mock)...");
-            setTimeout(() => {
-                showModal("✅ Payment successful! PDF Download Enabled.");
-                
-                // Update Metrics (Mocked)
-                const priceText = document.getElementById('currentPrice').textContent.replace('₦', '');
-                incrementMetric('income', parseInt(priceText || '500')); 
-                incrementMetric('downloads');
-
-                document.getElementById('payBtn').style.display = 'none';
-                document.getElementById('downloadBtn').style.display = 'block';
-                document.getElementById('downloadBtn').disabled = false;
-            }, 3000);
-        }
-        
         // --- Metric Management (Mocked using localStorage) ---
         function incrementMetric(key, value = 1) {
             let current = parseInt(localStorage.getItem(STORAGE_PREFIX + key) || '0');
@@ -586,9 +706,13 @@ ${data.name}`;
           return true; 
         }
 
-        // Mock PDF Download
+        // Mock PDF Download (Only works if paid)
         function downloadPDF() { 
-            showModal("📄 Generating PDF (Mock)...");
+            if (!isPaid) {
+                 showModal("❌ Please complete payment to download the final document.");
+                 return;
+            }
+            showModal("📄 Generating PDF...");
             
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -604,11 +728,26 @@ ${data.name}`;
 
             showModal("✅ PDF downloaded successfully!");
         }
-        function printDocument() { window.print(); }
+
+        // Print Document (Only works if paid)
+        function printDocument() { 
+            if (!isPaid) {
+                 showModal("❌ Please complete payment to print the final document.");
+                 return;
+            }
+            window.print(); 
+        }
+
+        // Email Document (Only works if paid)
         function emailDocument() { 
+            if (!isPaid) {
+                 showModal("❌ Please complete payment to email the final document.");
+                 return;
+            }
             incrementMetric('emails');
             showModal("📧 Email draft prepared! (Mock Email Feature)"); 
         }
+
         function showModal(message) {
           const modal = document.createElement('div');
           modal.className = 'modal';
