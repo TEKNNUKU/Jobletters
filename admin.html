@@ -220,6 +220,23 @@
           </form>
       </div>
 
+      <h2><i class="fas fa-users"></i> Saved User Data (Mock)</h2>
+<div class="config-section">
+    <p>This table lists users who opted to save their details or have generated a document, providing data for mock analysis.</p>
+    <table id="userDataTable" style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+        <thead>
+            <tr style="background-color: #ddd;">
+                <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Name</th>
+                <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Email</th>
+                <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Last Generated</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+    <button class="button" style="background-color: #6c757d; max-width: 250px;" onclick="loadMetrics()">Refresh Data</button>
+</div>
+
       <h2>Clear Data</h2>
       <div class="config-section">
           <p>Use caution: This action clears all stored metrics and settings.</p>
@@ -331,6 +348,51 @@
         loadSettings(); // Reload settings display
         
         return false;
+    }
+
+        // --- User Data Table Logic (New) ---
+    function loadUserDataTable() {
+        const tableBody = document.querySelector('#userDataTable tbody');
+        tableBody.innerHTML = ''; // Clear existing rows
+
+        let savedUsers = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'savedUsers') || '[]');
+
+        if (savedUsers.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="3" style="padding: 10px; text-align: center;">No user data saved yet.</td></tr>`;
+            return;
+        }
+
+        savedUsers.sort((a, b) => new Date(b.lastGenerated) - new Date(a.lastGenerated)); // Sort by most recent
+
+        savedUsers.forEach(user => {
+            const date = new Date(user.lastGenerated).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' });
+            const row = tableBody.insertRow();
+            row.style.borderBottom = '1px solid #eee';
+
+            row.insertCell().textContent = user.name;
+            row.insertCell().textContent = user.email;
+            row.insertCell().textContent = date;
+            
+            // Apply table cell padding
+            Array.from(row.cells).forEach(cell => {
+                cell.style.padding = '10px';
+                cell.style.border = '1px solid #ccc';
+            });
+        });
+    }
+
+    // Update the checkAdminAccess function to call loadUserDataTable:
+    function checkAdminAccess() {
+        // ... (previous code) ...
+
+        if (hasAccess) {
+            // ... (previous code) ...
+            loadMetrics();
+            loadSettings();
+            loadUserDataTable(); // New call
+        } else {
+            // ... (previous code) ...
+        }
     }
 
     // --- Clear Data Function ---
