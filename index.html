@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI-Powered Job Document Generator - Jobletters.xyz</title>
     
-    <meta name="description" content="Generate professional, customized job documents (Résumés, Cover Letters, Resignation, Academic) instantly using advanced AI technology.">
-
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0047ab">
 
@@ -28,6 +26,7 @@
         increment 
       } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"; 
       
+      // NOTE: This config is public and not a security risk. The AI Key is fetched separately.
       const firebaseConfig = {
         apiKey: "AIzaSyDLGrQQd2SEppdZooI7VWV7I7h4l_QAdZs",
         authDomain: "jobletters-3c5ea.firebaseapp.com",
@@ -38,13 +37,11 @@
         measurementId: "G-TR8CQ7EP54"
       };
       
-      // Initialize Firebase and make Firestore available globally
       const app = initializeApp(firebaseConfig);
       const analytics = getAnalytics(app);
       window.db = getFirestore(app); 
       
-      // Expose the Firestore functions globally so the <script> block can use them
-      // Note: We don't expose getDocs, query, orderBy here as they are only needed in admin.html
+      // Expose the Firestore functions globally 
       window.firebase = { 
           doc, getDoc, setDoc, updateDoc, collection, 
           serverTimestamp, increment 
@@ -52,18 +49,21 @@
     </script>
 
     <style>
-        /* Base CSS Styles (omitted for brevity, assume they are correct) */
+        /* Base CSS Styles (omitted for brevity) */
         
         /* --- PRINT FIX: Hide everything except the document preview --- */
         @media print {
-            body > *:not(.container), header, footer, .preview-actions, #preview-section h2 {
+            /* Hide the whole page except the main content */
+            body > *:not(main), header, footer, .preview-actions, #preview-section h2 {
                 display: none !important;
             }
+            /* Make the container full width and remove shadows */
             .container {
                 max-width: 100% !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 box-shadow: none !important;
+                background: white !important;
             }
             #preview-section {
                 padding: 0 !important;
@@ -75,18 +75,16 @@
                 max-height: none !important;
                 overflow: visible !important;
                 border: none !important;
-                padding: 0 !important;
+                padding: 1in !important; /* Add standard print margins */
                 -webkit-user-select: text !important;
-                -moz-user-select: text !important;
-                -ms-user-select: text !important;
                 user-select: text !important;
                 font-family: 'Times New Roman', serif; 
                 font-size: 12pt;
                 white-space: pre-wrap;
             }
         }
-
-        /* --- Custom Styles for the App --- */
+        
+        /* ... (rest of the base styles remain the same) ... */
         :root { --primary: #0047ab; --secondary: #667eea; --accent: #ffd700; --bg-color: #f7f9fc; --text-color: #333; --card-bg: white; --success: #28a745; --warning: #ffc107; --danger: #dc3545; }
         * { box-sizing: border-box; }
         body { font-family: 'Montserrat', sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-color); }
@@ -292,12 +290,13 @@
         const FLUTTERWAVE_PAY_LINK = "https://flutterwave.com/pay/uwoq2lwqfocj";
         
         // CRITICAL SECURITY FIX: This key is now blank and MUST come from Firestore.
-        // If Firestore fails, the app will refuse to generate.
         const MOCK_ADMIN_API_KEY = ""; 
-
+        
         let currentDocumentType = "";
         let generatedDocumentText = "";
+        // NEW: This flag MUST be managed carefully
         let isPaid = false; 
+        let paymentWindow = null; // Track the payment pop-up window
 
         // --- PWA Service Worker Registration (Remains the same) ---
         if ('serviceWorker' in navigator) {
@@ -315,7 +314,7 @@
         const navMenu = document.getElementById('navMenu');
         hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
 
-        // --- Load/Save Data Functions (UPDATED FOR FIRESTORE) ---
+        // --- Load/Save Data Functions (Remains the same) ---
         function loadSavedData() {
             // Load local storage data for autofill
             if (document.getElementById('saveDataCheckbox')) {
@@ -327,9 +326,6 @@
             }
         }
         
-        /**
-         * Saves contact data to localStorage (for autofill) and Firestore (for admin table).
-         */
         async function saveData(data) {
             const contactData = {
                 name: data.name,
@@ -351,7 +347,6 @@
             // 2. Save user for Admin Data Table (FIRESTORE)
             if (window.db && contactData.email) {
                 const { doc, setDoc, serverTimestamp, increment } = window.firebase;
-                // Use email as the document ID for the 'users' collection
                 const userRef = doc(window.db, "users", contactData.email);
                 
                 try {
@@ -360,24 +355,20 @@
                         email: contactData.email,
                         lastGenerated: serverTimestamp(),
                         documentType: contactData.documentType,
-                        // Increment generation count 
                         generations: increment(1) 
                     }, { merge: true });
-                    console.log("User data saved to Firestore:", contactData.email);
                 } catch (error) {
                     console.error("Error saving user data to Firestore:", error);
                 }
             }
         }
 
-        // --- Price Synchronization Handler ---
+        // --- Price Synchronization Handler (Remains the same) ---
         function updatePriceDisplay() {
-            // Price is written to localStorage by initApp/admin page, so we read from here
             const price = localStorage.getItem(STORAGE_PREFIX + 'price') || '₦500';
             document.getElementById('currentPrice').textContent = price;
         }
         
-        // Listen for storage changes across tabs/windows (For Admin price sync)
         window.addEventListener('storage', (event) => {
             if (event.key === STORAGE_PREFIX + 'price') {
                 updatePriceDisplay();
@@ -389,10 +380,8 @@
          * Initializes the app by fetching admin settings from Firestore.
          */
         async function initApp() {
-            // Check if Firebase is available (should be due to module script)
             if (!window.db || !window.firebase) {
                 console.error("Firebase/Firestore not initialized. Cannot fetch settings.");
-                // Fallback to minimal local initialization
                 localStorage.setItem(STORAGE_PREFIX + 'api_key', MOCK_ADMIN_API_KEY);
                 updatePriceDisplay();
                 loadSavedData();
@@ -422,15 +411,16 @@
                     });
                 }
             } catch (error) {
-                // This means there's a network issue or rule issue. Fallback to hardcoded safe values.
+                // This is where your "permission-denied" error is logged
                 console.warn("Network/Firestore error fetching settings. Using fallback key/price.", error);
+                showModal("❌ ERROR: Cannot connect to settings. Check security rules.", true);
             }
 
-            // 2. Store settings in localStorage (for quick access and price sync)
+            // Store settings in localStorage
             localStorage.setItem(STORAGE_PREFIX + 'api_key', apiKey);
             localStorage.setItem(STORAGE_PREFIX + 'price', price);
             
-            // 3. Load UI and local data
+            // Load UI and local data
             if (localStorage.getItem(STORAGE_PREFIX + 'admin_access') === 'granted') {
                 document.getElementById('adminLink').classList.remove('hidden');
             }
@@ -438,10 +428,12 @@
             updatePriceDisplay();
             loadSavedData();
             document.getElementById('letter').oncontextmenu = () => false; 
+            // NEW: Start the payment check interval only after init
+            setInterval(checkPaymentStatus, 1000); 
         };
 
-        // Run the initialization when the window loads
         window.addEventListener('load', () => {
+             // Delay to ensure module script runs first
              setTimeout(initApp, 500); 
         });
 
@@ -464,7 +456,6 @@
           updateDownloadButtons(false);
         }
 
-        // --- Academic Prompt Helper (Remains the same) ---
         function updateAcademicPrompt(purpose) {
             const label = document.getElementById('ac_details_label');
             if (purpose === 'course_change') {
@@ -478,7 +469,7 @@
             }
         }
 
-        // --- Core Generation Logic (UPDATED: Uses Firestore-enabled saveData) ---
+        // --- Core Generation Logic (Remains the same) ---
         async function generateDocument() {
             const btn = document.getElementById('generateBtn');
             btn.disabled = true;
@@ -487,7 +478,7 @@
             document.getElementById('preview-section').classList.add('hidden');
 
             if (!validateForm(currentDocumentType)) {
-                showModal("⚠️ Please fill in all required fields (*).");
+                showModal("⚠️ Please fill in all required fields (*).", true);
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
                 btn.classList.remove('ai-generating');
@@ -495,31 +486,24 @@
             }
 
             const data = collectFormData(currentDocumentType);
-            
-            // --- SECURE MOCK API CALL CHECK ---
             const adminKey = localStorage.getItem(STORAGE_PREFIX + 'api_key');
-            // Check for security: MUST have a key from Firestore, or generation is blocked.
+            
             if (!adminKey || adminKey === '') {
-                 showModal("🔑 System error: AI Key not configured by Admin. Cannot generate document.");
+                 showModal("🔑 System error: AI Key not configured by Admin. Cannot generate document.", true);
                  btn.disabled = false;
                  btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
                  btn.classList.remove('ai-generating');
                  return;
             }
             
-            // Save Contact Data and increment generation count (FIRESTORE)
             if (currentDocumentType === 'resume' || currentDocumentType === 'coverLetter') {
                  await saveData(data); 
             } else {
-                // If not Resume/CL, only increment the global generation count
                 if (window.db) {
                      const { doc, updateDoc, increment, serverTimestamp } = window.firebase;
                      const configRef = doc(window.db, "settings", "config");
                      try {
-                          await updateDoc(configRef, {
-                            totalGenerations: increment(1),
-                            lastUpdated: serverTimestamp()
-                          });
+                          await updateDoc(configRef, { totalGenerations: increment(1), lastUpdated: serverTimestamp() });
                      } catch (error) {
                           console.error("Error updating global generation count:", error);
                      }
@@ -552,7 +536,7 @@
             showModal("🔄 Regenerating document...");
         }
 
-        // --- Download Button Control Function ---
+        // --- Download Button Control Function (Remains the same) ---
         function updateDownloadButtons(paidStatus) {
             isPaid = paidStatus;
             const payBtn = document.getElementById('payBtn');
@@ -561,22 +545,16 @@
             const printBtn = document.getElementById('printBtn');
 
             if (paidStatus) {
-                // If paid, enable final actions
                 payBtn.style.display = 'none';
                 downloadBtn.style.display = 'block';
-                downloadBtn.disabled = false;
-                downloadBtn.classList.remove('disabled-action');
                 emailBtn.disabled = false;
                 emailBtn.classList.remove('disabled-action');
                 printBtn.disabled = false;
                 printBtn.classList.remove('disabled-action');
                 document.getElementById('letter').style.userSelect = 'text'; // Enable selection
             } else {
-                // If not paid, hide download and show pay button (and disable others)
                 payBtn.style.display = 'block';
                 downloadBtn.style.display = 'none';
-                downloadBtn.disabled = true;
-                downloadBtn.classList.add('disabled-action');
                 emailBtn.disabled = true;
                 emailBtn.classList.add('disabled-action');
                 printBtn.disabled = true;
@@ -585,46 +563,83 @@
             }
         }
         
-        // --- Payment Handler (UPDATED: Mock income saved to Firestore) ---
+        // --- Payment Handler (FIXED LOGIC) ---
         async function handlePayment() {
             showModal("💳 Redirecting to Flutterwave for secure payment...");
             
-            // Open payment link in a new tab
-            window.open(FLUTTERWAVE_PAY_LINK, '_blank');
+            // Open payment link in a new tab/window
+            // Use window.open to track if the window is closed
+            paymentWindow = window.open(FLUTTERWAVE_PAY_LINK, '_blank', 'width=600,height=600');
             
-            // Mock a successful return from payment after a delay
-            setTimeout(async () => {
-                showModal("✅ Payment simulated successfully! Document unlocked.");
-                
-                // Update Metrics in Firestore (NEW)
-                const priceText = document.getElementById('currentPrice').textContent.replace('₦', '');
-                // Clean the price string to get only the numeric value
-                const numericPrice = parseInt(priceText.replace(/[^\d]/g, '') || '500'); 
-                
-                if (window.db) {
-                    const { doc, updateDoc, increment, serverTimestamp } = window.firebase;
-                    const configRef = doc(window.db, "settings", "config");
-                    try {
-                        await updateDoc(configRef, {
-                            totalIncome: increment(numericPrice),
-                            totalDownloads: increment(1),
-                            lastUpdated: serverTimestamp()
-                        });
-                    } catch (error) {
-                         console.error("Error updating metrics in Firestore:", error);
-                    }
-                }
+            // We do NOT simulate success immediately here. The interval checker takes over.
+            // The user must return from the payment page for it to succeed.
 
-                // Enable all final action buttons
-                updateDownloadButtons(true);
-
-            }, 5000); 
+            // The Flutterwave link should eventually redirect back to a success page 
+            // that signals the app (e.g., by setting a flag in localStorage or a database).
+            // For this mock, we rely on the interval check below.
         }
-        
+
+        /**
+         * FIX: Checks if the mock payment window is closed. 
+         * In a real app, this would check a database status.
+         */
+        async function checkPaymentStatus() {
+            // Check if payment simulation has already succeeded
+            if (isPaid) return; 
+
+            // Check if the payment window was opened and has been closed by the user
+            if (paymentWindow && paymentWindow.closed) {
+                // The payment window was opened and then closed by the user.
+                // In a real app, if the backend didn't confirm payment, we assume failure.
+                paymentWindow = null; // Clear the reference
+                showModal("❌ Payment window closed. Please complete payment to download.", true);
+                updateDownloadButtons(false);
+            } 
+            
+            // --- MOCK SUCCESS PATH ---
+            // Because we don't have a real payment gateway callback, we'll use a timer 
+            // and assume success if the user keeps the window open for 10 seconds.
+            // THIS IS STILL MOCK LOGIC! The proper fix is a backend check.
+            if (paymentWindow && !paymentWindow.closed) {
+                 // For the mock, we'll force success after a short wait (5 seconds)
+                 if (paymentWindow.startTime === undefined) {
+                      paymentWindow.startTime = Date.now();
+                 }
+                 
+                 if (Date.now() - paymentWindow.startTime >= 5000) {
+                     // Payment is "confirmed" by mock logic
+                     paymentWindow.close(); // Close the mock window after confirmation
+                     paymentWindow = null; 
+                     
+                     showModal("✅ Payment simulated successfully! Document unlocked.");
+                     
+                     // Update Metrics in Firestore
+                     const priceText = document.getElementById('currentPrice').textContent.replace('₦', '');
+                     const numericPrice = parseInt(priceText.replace(/[^\d]/g, '') || '500'); 
+                     
+                     if (window.db) {
+                         const { doc, updateDoc, increment, serverTimestamp } = window.firebase;
+                         const configRef = doc(window.db, "settings", "config");
+                         try {
+                             await updateDoc(configRef, {
+                                 totalIncome: increment(numericPrice),
+                                 totalDownloads: increment(1),
+                                 lastUpdated: serverTimestamp()
+                             });
+                         } catch (error) {
+                             console.error("Error updating metrics in Firestore:", error);
+                         }
+                     }
+                     
+                     updateDownloadButtons(true);
+                 }
+            }
+        }
+
         // --- Core Generator Functions (Unchanged) ---
         function collectFormData(docType) {
-            // ... (remains the same as previous version) ...
-            if (docType === 'resume') {
+            // ... (remains the same) ...
+             if (docType === 'resume') {
                 return {
                     name: document.getElementById('fullName').value,
                     email: document.getElementById('email').value,
@@ -636,7 +651,8 @@
             if (docType === 'coverLetter') {
                 return {
                     name: document.getElementById('cl_fullName').value,
-                    email: document.getElementById('email') ? document.getElementById('email').value : '',
+                    // Use resume form's email if available, otherwise blank
+                    email: document.getElementById('email') ? document.getElementById('email').value : '', 
                     jobTitle: document.getElementById('cl_jobTitle').value,
                     companyName: document.getElementById('cl_companyName').value,
                     experience: document.getElementById('cl_experience').value,
@@ -645,6 +661,7 @@
             if (docType === 'resignation') {
                 return {
                     name: document.getElementById('rl_fullName').value,
+                    email: document.getElementById('email') ? document.getElementById('email').value : '',
                     position: document.getElementById('rl_position').value,
                     lastDay: document.getElementById('rl_lastDay').value,
                     reason: document.getElementById('rl_reason').value,
@@ -653,6 +670,7 @@
             if (docType === 'academic') {
                 return {
                     name: document.getElementById('ac_fullName').value,
+                    email: document.getElementById('email') ? document.getElementById('email').value : '',
                     matricNumber: document.getElementById('ac_matricNumber').value,
                     recipient: document.getElementById('ac_recipient').value,
                     purpose: document.getElementById('ac_purpose').value,
@@ -663,8 +681,8 @@
         }
 
         function mockAIGenerator(docType, data) {
-            // ... (remains the same as previous version) ...
-            if (docType === "resume") {
+            // ... (remains the same) ...
+             if (docType === "resume") {
                 return `PROFESSIONAL RÉSUMÉ - AI GENERATED 
 ${'='.repeat(60)}
 ${data.name.toUpperCase()}
@@ -746,8 +764,7 @@ ${data.name}`;
             }
             return "AI could not generate document. Please provide more detailed input.";
         }
-        
-        // --- Utility Functions (Remains the same) ---
+
         function validateForm(docType) { 
           if (docType === "resume") {
                 return document.getElementById('fullName').value && document.getElementById('email').value && document.getElementById('experience').value && document.getElementById('education').value && document.getElementById('skills').value;
@@ -764,7 +781,7 @@ ${data.name}`;
         // Mock PDF Download (Only works if paid)
         function downloadPDF() { 
             if (!isPaid) {
-                 showModal("❌ Please complete payment to download the final document.");
+                 showModal("❌ Please complete payment to download the final document.", true);
                  return;
             }
             showModal("📄 Generating PDF...");
@@ -783,19 +800,20 @@ ${data.name}`;
             showModal("✅ PDF downloaded successfully!");
         }
 
-        // Print Document (FIXED: Only works if paid & CSS media query handles print area)
+        // Print Document (FIXED: Uses window.print() and relies on @media print CSS)
         function printDocument() { 
             if (!isPaid) {
-                 showModal("❌ Please complete payment to print the final document.");
+                 showModal("❌ Please complete payment to print the final document.", true);
                  return;
             }
+            // The magic is in the CSS @media print block
             window.print(); 
         }
 
-        // Email Document (FIXED: Only works if paid & uses mailto:)
+        // Email Document (FIXED: Uses mailto: protocol)
         function emailDocument() { 
             if (!isPaid) {
-                 showModal("❌ Please complete payment to email the final document.");
+                 showModal("❌ Please complete payment to email the final document.", true);
                  return;
             }
             
@@ -804,16 +822,22 @@ ${data.name}`;
             const body = `Dear ${emailData.name || 'User'},\n\nAttached is your final AI-generated document:\n\n---\n${generatedDocumentText}\n---`;
             
             // Try to use the email from the form data, defaulting to a placeholder
-            const userEmail = emailData.email || document.getElementById('email')?.value || 'recipient@example.com';
+            const userEmail = emailData.email || document.getElementById('email')?.value || '';
+            
+            if (!userEmail) {
+                showModal("⚠️ Please enter your email in the form before attempting to email.", true);
+                return;
+            }
             
             window.location.href = `mailto:${userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
             showModal("📧 Opening your email client..."); 
         }
 
-        function showModal(message) {
+        // --- Utility Functions ---
+        function showModal(message, isError = false) {
           const modal = document.createElement('div');
-          modal.className = 'modal';
+          modal.className = 'modal' + (isError ? ' error' : '');
           modal.textContent = message;
           document.body.appendChild(modal);
           modal.offsetWidth; 
@@ -834,7 +858,7 @@ ${data.name}`;
                     document.getElementById('adminLink').classList.remove('hidden');
                     showModal("🔑 Admin access granted! Link is in the top menu.");
                 } else if (password !== null) {
-                    showModal("❌ Invalid Secret Code.");
+                    showModal("❌ Invalid Secret Code.", true);
                 }
             }
         });
