@@ -1,418 +1,302 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin Dashboard - Jobletters.xyz</title>
-  
-  <meta name="description" content="Administrator dashboard for managing pricing and viewing platform metrics for Jobletters.xyz.">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - Jobletters.xyz</title>
 
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0047ab">
- 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
-  
-  <style>
-    /* ------------------------------------- */
-    /* GLOBAL & UTILITIES (Copied from index.html) */
-    /* ------------------------------------- */
-    :root {
-      --primary: #0047ab;
-      --secondary: #667eea;
-      --accent: #ffd700;
-      --bg-color: #f7f9fc;
-      --text-color: #333;
-      --card-bg: white;
-      --gradient-main: linear-gradient(135deg, var(--primary) 0%, #0066cc 100%);
-      --gradient-ai: linear-gradient(135deg, var(--secondary) 0%, #764ba2 100%);
-      --success: #28a745;
-      --danger: #dc3545;
-    }
-    * { box-sizing: border-box; scroll-behavior: smooth; }
-    body { font-family: 'Montserrat', sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-color); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-    a { color: var(--primary); text-decoration: none; transition: color 0.3s ease; }
-    a:hover { color: #0056b3; }
-    .hidden { display: none !important; }
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0047ab">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
 
-    /* HEADER & NAV */
-    header { background: var(--gradient-main); color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-    .logo { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-    .logo i { color: var(--accent); margin-right: 8px; }
-    .ai-badge { background: linear-gradient(135deg, #ff6b6b, var(--accent)); padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; color: #000; }
-    .hamburger { font-size: 28px; cursor: pointer; display: none; color: white; transition: transform 0.3s ease; }
-    
-    nav { display: flex; gap: 20px; }
-    nav a { color: white; font-weight: 500; font-size: 16px; position: relative; }
-    nav a::after { content: ''; position: absolute; width: 0%; height: 2px; bottom: -4px; left: 0; background-color: var(--accent); transition: width 0.3s ease; }
-    nav a:hover::after { width: 100%; }
-    
-    @media (max-width: 768px) {
-      nav { position: fixed; top: 60px; right: 0; background: var(--primary); height: calc(100% - 60px); width: 200px; flex-direction: column; padding: 20px; transform: translateX(100%); transition: transform 0.3s ease; box-shadow: -2px 0 6px rgba(0,0,0,0.2); }
-      nav.open { transform: translateX(0); }
-      nav a { padding: 15px 0; font-size: 18px; }
-      .hamburger { display: block; }
-    }
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
+      // NEW FIRESTORE IMPORTS (Including getDocs and query)
+      import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"; 
+      
+      const firebaseConfig = {
+        apiKey: "AIzaSyDLGrQQd2SEppdZooI7VWV7I7h4l_QAdZs",
+        authDomain: "jobletters-3c5ea.firebaseapp.com",
+        projectId: "jobletters-3c5ea",
+        storageBucket: "jobletters-3c5ea.firebasestorage.app",
+        messagingSenderId: "473489426093",
+        appId: "1:473489426093:web:fae4d21f759d14837aa824",
+        measurementId: "G-TR8CQ7EP54"
+      };
+      
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+      window.db = getFirestore(app); 
+      
+      // Expose the Firestore functions globally
+      window.firebase = { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, orderBy, serverTimestamp };
+    </script>
 
-    /* CONTAINER & TYPOGRAPHY */
-    .container { max-width: 1000px; background: var(--card-bg); margin: 40px auto 80px; padding: 30px 35px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.07); }
-    h1 { font-weight: 700; color: var(--primary); margin-bottom: 12px; text-align: center; }
-    h2 { color: var(--primary); margin-top: 35px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-    p { line-height: 1.6; }
-    .button { background: var(--gradient-ai); border: none; color: white; font-weight: 700; padding: 15px 30px; border-radius: 6px; cursor: pointer; transition: background-color 0.3s ease, transform 0.2s ease; display: inline-block; margin-top: 25px; text-decoration: none; }
-    .button:hover { opacity: 0.9; transform: scale(1.005); }
+    <style>
+        /* CSS from previous admin.html version */
+        :root { --primary: #0047ab; --secondary: #667eea; --accent: #ffd700; --bg-color: #f7f9fc; --text-color: #333; --card-bg: white; --gradient-main: linear-gradient(135deg, var(--primary) 0%, #0066cc 100%); }
+        * { box-sizing: border-box; }
+        body { font-family: 'Montserrat', sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-color); }
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        header { background: var(--gradient-main); color: white; padding: 15px 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        h1 { margin: 0; font-size: 28px; }
+        .card { background: var(--card-bg); padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .stat-box { background: #e6f0ff; padding: 20px; border-radius: 8px; text-align: center; border-left: 5px solid var(--primary); }
+        .stat-box h3 { margin: 0 0 5px 0; font-size: 16px; color: var(--primary); }
+        .stat-box p { font-size: 28px; font-weight: 700; color: var(--text-color); margin: 0; }
+        
+        /* Settings Form */
+        form label { display: block; font-weight: 600; margin-top: 15px; }
+        form input { font-family: 'Montserrat', sans-serif; font-size: 16px; border-radius: 4px; border: 1px solid #ccc; padding: 10px 12px; margin-top: 5px; width: 100%; }
+        .button { background: #28a745; border: none; color: white; font-weight: 700; padding: 12px 25px; border-radius: 4px; cursor: pointer; margin-top: 20px; transition: background-color 0.3s ease; }
+        .button:hover { background: #1e7e34; }
 
-    /* FOOTER */
-    footer { background-color: #222; color: #ccc; padding: 25px 20px; text-align: center; font-size: 14px; }
-    footer a { color: var(--accent); font-weight: 600; }
+        /* User Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        table th, table td { border: 1px solid #eee; padding: 12px; text-align: left; }
+        table th { background-color: #f1f1f1; color: var(--text-color); font-weight: 700; }
+        tbody tr:nth-child(even) { background-color: #fafafa; }
+        tbody tr:hover { background-color: #e6f0ff; }
+        .spinner { border: 4px solid rgba(0, 71, 171, 0.3); border-top: 4px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    /* ------------------------------------- */
-    /* ADMIN SPECIFIC STYLES */
-    /* ------------------------------------- */
-    
-    /* Login Message */
-    #admin-login-message {
-        text-align: center;
-        padding: 50px;
-        background: #ffebeb;
-        border: 1px solid var(--danger);
-        border-radius: 8px;
-        color: var(--danger);
-    }
-    #admin-login-message button {
-        background-color: var(--danger);
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        margin-top: 15px;
-        cursor: pointer;
-    }
-    
-    /* Metrics Grid */
-    .metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin-top: 30px;
-    }
-    .metric-card {
-        background: var(--card-bg);
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-    .metric-card i {
-        font-size: 30px;
-        color: var(--primary);
-        margin-bottom: 10px;
-    }
-    .metric-card h4 {
-        margin: 0;
-        font-size: 1.5em;
-        font-weight: 700;
-        color: var(--text-color);
-    }
-    .metric-card p {
-        margin: 5px 0 0;
-        font-size: 0.9em;
-        color: #777;
-    }
-    
-    /* Configuration Section */
-    .config-section {
-        background: var(--bg-color);
-        padding: 25px;
-        border-radius: 8px;
-        margin-top: 40px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-    .config-section label {
-        display: block;
-        font-weight: 600;
-        margin-top: 15px;
-    }
-    .config-section input[type="text"], .config-section input[type="number"] {
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        width: 100%;
-        max-width: 300px;
-        margin-top: 5px;
-        font-size: 16px;
-    }
-    .config-section button {
-        background-color: var(--success);
-        margin-top: 20px;
-        width: 100%;
-        max-width: 300px;
-        padding: 12px;
-    }
-  </style>
+        /* Modal for alerts */
+        .modal { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 100%); background: #333; color: white; padding: 15px 25px; border-radius: 8px; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.5s ease-out; opacity: 0; }
+        .modal.show { transform: translate(-50%, 0); opacity: 1; }
+    </style>
 </head>
 <body>
-  <header>
-    <div class="logo" aria-label="Jobletters.xyz Logo">
-      <a href="/index.html" style="color: white; text-decoration: none; display: flex; align-items: center;">
-        <i class="fas fa-envelope"></i> Jobletters.xyz
-      </a>
-      <span class="ai-badge">AI POWERED</span>
-    </div>
-    <div class="hamburger" id="hamburger" aria-label="Menu" role="button" tabindex="0">
-      <i class="fas fa-bars"></i>
-    </div>
-    <nav id="navMenu" aria-label="Primary Navigation">
-      <a href="/index.html">Home</a>
-      <a href="/how-it-works.html">How It Works</a>
-      <a href="/pricing.html">Pricing</a>
-      <a href="/contact.html">Contact</a>
-      <a href="/admin.html" id="adminLink" class="hidden">Admin</a>
-    </nav>
-  </header>
+    <header>
+        <h1><i class="fas fa-lock"></i> Jobletters.xyz Admin Dashboard</h1>
+        <p>Manage Settings, View Metrics, and Monitor User Activity</p>
+    </header>
 
-  <main class="container">
-    <div id="admin-content">
-      <h1><i class="fas fa-chart-line"></i> Admin Dashboard</h1>
-      <p style="text-align: center;">Welcome, Administrator. Monitor platform performance and adjust pricing settings here.</p>
-      
-      <h2>Platform Metrics (Lifetime Mock Data)</h2>
-      <div class="metrics-grid">
-          <div class="metric-card">
-              <i class="fas fa-money-bill-wave"></i>
-              <h4 id="totalIncome">₦0</h4>
-              <p>Total Income (Simulated)</p>
-          </div>
-          <div class="metric-card">
-              <i class="fas fa-robot"></i>
-              <h4 id="totalGenerations">0</h4>
-              <p>Documents Generated (Drafts)</p>
-          </div>
-          <div class="metric-card">
-              <i class="fas fa-download"></i>
-              <h4 id="totalDownloads">0</h4>
-              <p>Paid Downloads</p>
-          </div>
-          <div class="metric-card">
-              <i class="fas fa-envelope-open-text"></i>
-              <h4 id="totalEmails">0</h4>
-              <p>Email Drafts Used</p>
-          </div>
-      </div>
-
-      <h2>Pricing Configuration</h2>
-      <div class="config-section">
-          <form onsubmit="return saveSettings(event)">
-              <label for="apiKey">Mock AI API Key (Required for generation)</label>
-              <input type="text" id="apiKey" placeholder="e.g. sk-jobletters-admin-xxxxx" required>
-              <small style="color:#777;">Must be set to enable the AI generator on the main page.</small>
-              
-              <label for="documentPrice">Price Per Document (₦)</label>
-              <input type="number" id="documentPrice" min="100" placeholder="e.g. 500" required>
-              <small style="color:#777;">This adjusts the price displayed and charged on the main page.</small>
-              
-              <button type="submit" class="button">
-                  <i class="fas fa-save"></i> Save Settings
-              </button>
-          </form>
-      </div>
-
-      <h2><i class="fas fa-users"></i> Saved User Data (Mock)</h2>
-<div class="config-section">
-    <p>This table lists users who opted to save their details or have generated a document, providing data for mock analysis.</p>
-    <table id="userDataTable" style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-        <thead>
-            <tr style="background-color: #ddd;">
-                <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Name</th>
-                <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Email</th>
-                <th style="padding: 10px; border: 1px solid #ccc; text-align: left;">Last Generated</th>
-            </tr>
-        </thead>
-        <tbody>
-            </tbody>
-    </table>
-    <button class="button" style="background-color: #6c757d; max-width: 250px;" onclick="loadMetrics()">Refresh Data</button>
-</div>
-
-      <h2>Clear Data</h2>
-      <div class="config-section">
-          <p>Use caution: This action clears all stored metrics and settings.</p>
-          <button class="button" style="background-color: var(--danger);" onclick="clearAllData()">
-              <i class="fas fa-trash-alt"></i> Clear All Mock Data & Metrics
-          </button>
-      </div>
-      
-    </div>
-    
-    <div id="admin-login-message" class="hidden">
-        <h1>Access Denied</h1>
-        <p>Please log in with the secret admin code to access the dashboard.</p>
-        <button onclick="promptAdminLogin()"><i class="fas fa-lock"></i> Enter Secret Code</button>
-        <p style="margin-top: 20px;">Hint: The secret code can also be entered via **Ctrl + Shift + A** (or **Cmd + Shift + A** on Mac) from the main page.</p>
-    </div>
-
-  </main>
-
-  <footer>
-    <p>&copy; 2025 Jobletters.xyz. All rights reserved.</p>
-    <p>Powered by AI Technology</p>
-  </footer>
-
-  <script>
-    const STORAGE_PREFIX = 'jobletters_';
-    
-    // Menu Toggle (FIXED)
-    const hamburger = document.getElementById('hamburger');
-    const navMenu = document.getElementById('navMenu');
-    hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
-
-    // --- Admin Access & Initialization ---
-    function checkAdminAccess() {
-        const hasAccess = localStorage.getItem(STORAGE_PREFIX + 'admin_access') === 'granted';
-        const adminContent = document.getElementById('admin-content');
-        const loginMessage = document.getElementById('admin-login-message');
-        const adminLink = document.getElementById('adminLink');
-
-        if (hasAccess) {
-            adminContent.classList.remove('hidden');
-            loginMessage.classList.add('hidden');
-            adminLink.classList.remove('hidden');
-            loadMetrics();
-            loadSettings();
-        } else {
-            adminContent.classList.add('hidden');
-            loginMessage.classList.remove('hidden');
-            adminLink.classList.add('hidden');
-        }
-    }
-    
-    function promptAdminLogin() {
-        const password = prompt("Admin Secret Code:");
-        if (password === 'jobadmin2025') { 
-            localStorage.setItem(STORAGE_PREFIX + 'admin_access', 'granted');
-            alert("🔑 Access granted! Reloading dashboard.");
-            checkAdminAccess(); // Reload the content
-        } else if (password !== null) {
-            alert("❌ Invalid Secret Code.");
-        }
-    }
-    
-    // --- Metric Display Logic ---
-    function loadMetrics() {
-        const income = parseInt(localStorage.getItem(STORAGE_PREFIX + 'income') || '0');
-        const generations = parseInt(localStorage.getItem(STORAGE_PREFIX + 'generations') || '0');
-        const downloads = parseInt(localStorage.getItem(STORAGE_PREFIX + 'downloads') || '0');
-        const emails = parseInt(localStorage.getItem(STORAGE_PREFIX + 'emails') || '0');
+    <main class="container">
         
-        // Format income as currency
-        const formattedIncome = new Intl.NumberFormat('en-NG', {
-            style: 'currency',
-            currency: 'NGN'
-        }).format(income);
+        <div class="card">
+            <h2><i class="fas fa-chart-line"></i> Key Metrics</h2>
+            <div id="metrics-loading" class="spinner"></div>
+            <div id="metrics-error" style="color: red; text-align: center; display: none;">Error loading metrics.</div>
+            <div class="stats-grid" id="metrics-display" style="display: none;">
+                <div class="stat-box">
+                    <h3>Total Income</h3>
+                    <p id="totalIncome">₦0</p>
+                </div>
+                <div class="stat-box">
+                    <h3>AI Generations</h3>
+                    <p id="totalGenerations">0</p>
+                </div>
+                <div class="stat-box">
+                    <h3>Final Downloads</h3>
+                    <p id="totalDownloads">0</p>
+                </div>
+            </div>
+        </div>
 
-        document.getElementById('totalIncome').textContent = formattedIncome;
-        document.getElementById('totalGenerations').textContent = generations;
-        document.getElementById('totalDownloads').textContent = downloads;
-        document.getElementById('totalEmails').textContent = emails;
-    }
+        <div class="card">
+            <h2><i class="fas fa-cog"></i> Application Settings</h2>
+            <form id="settingsForm">
+                <label for="apiKey">Mock AI API Key (ChatGPT/OpenAI)</label>
+                <input type="text" id="apiKey" required />
+                <p style="font-size: 0.85em; color: #555;">This key is used by the frontend to mock an API call for generation.</p>
 
-    // --- Settings Logic ---
-    function loadSettings() {
-        const apiKey = localStorage.getItem(STORAGE_PREFIX + 'api_key') || '';
-        const price = localStorage.getItem(STORAGE_PREFIX + 'price') || '500';
+                <label for="documentPrice">Document Price (Naira)</label>
+                <input type="number" id="documentPrice" required min="1" />
+                <p style="font-size: 0.85em; color: #555;">Changing this will instantly update the price on all user tabs.</p>
 
-        document.getElementById('apiKey').value = apiKey;
-        document.getElementById('documentPrice').value = parseInt(price.replace('₦', ''));
-    }
+                <button type="submit" class="button"><i class="fas fa-save"></i> Save Settings</button>
+            </form>
+        </div>
 
-    function saveSettings(event) {
-        event.preventDefault();
+        <div class="card">
+            <h2><i class="fas fa-users"></i> Recent User Generations</h2>
+            <div id="users-loading" class="spinner"></div>
+            <table id="usersTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Document Type</th>
+                        <th>Generations</th>
+                        <th>Last Activity</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    </tbody>
+            </table>
+            <button class="button" onclick="loadUserDataTable()"><i class="fas fa-redo"></i> Refresh User Data</button>
+        </div>
+    </main>
+    
+    <script>
+        const STORAGE_PREFIX = 'jobletters_';
+        const MOCK_ADMIN_API_KEY = "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";
         
-        const apiKey = document.getElementById('apiKey').value.trim();
-        const priceInput = document.getElementById('documentPrice').value;
-        const price = `₦${parseInt(priceInput)}`;
-
-        if (!apiKey || isNaN(parseInt(priceInput))) {
-            alert("Error: Please provide a mock API key and a valid price (number).");
-            return false;
-        }
-
-        // Save settings to Local Storage
-        localStorage.setItem(STORAGE_PREFIX + 'api_key', apiKey);
-        localStorage.setItem(STORAGE_PREFIX + 'price', price);
-        
-        alert(`✅ Settings Saved!\nAI Key: ${apiKey}\nPrice set to: ${price}`);
-        loadSettings(); // Reload settings display
-        
-        return false;
-    }
-
-        // --- User Data Table Logic (New) ---
-    function loadUserDataTable() {
-        const tableBody = document.querySelector('#userDataTable tbody');
-        tableBody.innerHTML = ''; // Clear existing rows
-
-        let savedUsers = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'savedUsers') || '[]');
-
-        if (savedUsers.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="3" style="padding: 10px; text-align: center;">No user data saved yet.</td></tr>`;
-            return;
-        }
-
-        savedUsers.sort((a, b) => new Date(b.lastGenerated) - new Date(a.lastGenerated)); // Sort by most recent
-
-        savedUsers.forEach(user => {
-            const date = new Date(user.lastGenerated).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' });
-            const row = tableBody.insertRow();
-            row.style.borderBottom = '1px solid #eee';
-
-            row.insertCell().textContent = user.name;
-            row.insertCell().textContent = user.email;
-            row.insertCell().textContent = date;
-            
-            // Apply table cell padding
-            Array.from(row.cells).forEach(cell => {
-                cell.style.padding = '10px';
-                cell.style.border = '1px solid #ccc';
-            });
+        // Ensure Firebase is loaded before proceeding
+        window.addEventListener('load', () => {
+             // Delay to ensure global variables are set by the module script
+             setTimeout(() => {
+                 if (typeof window.db !== 'undefined' && typeof window.firebase !== 'undefined') {
+                    checkAccess();
+                    loadAllData();
+                 } else {
+                    document.body.innerHTML = '<h1>Firebase Initialization Error</h1><p>Please check your console for errors and ensure Firebase SDK is correctly loaded.</p>';
+                 }
+             }, 500); 
         });
-    }
 
-    // Update the checkAdminAccess function to call loadUserDataTable:
-    function checkAdminAccess() {
-        // ... (previous code) ...
-
-        if (hasAccess) {
-            // ... (previous code) ...
+        function checkAccess() {
+            if (localStorage.getItem(STORAGE_PREFIX + 'admin_access') !== 'granted') {
+                alert("Access Denied. Please log in from the main page.");
+                window.location.href = '/index.html';
+            }
+        }
+        
+        function loadAllData() {
             loadMetrics();
             loadSettings();
-            loadUserDataTable(); // New call
-        } else {
-            // ... (previous code) ...
+            loadUserDataTable();
         }
-    }
 
-    // --- Clear Data Function ---
-    function clearAllData() {
-        if (confirm("⚠️ WARNING: This will clear ALL mock metrics (Income, Generations, Downloads, Emails) and admin settings. Are you sure you want to proceed?")) {
-            localStorage.removeItem(STORAGE_PREFIX + 'income');
-            localStorage.removeItem(STORAGE_PREFIX + 'generations');
-            localStorage.removeItem(STORAGE_PREFIX + 'downloads');
-            localStorage.removeItem(STORAGE_PREFIX + 'emails');
-            localStorage.removeItem(STORAGE_PREFIX + 'api_key');
-            localStorage.setItem(STORAGE_PREFIX + 'price', '₦500'); // Reset price to default
+        // --- Metric Management (FIRESTORE READ) ---
+        async function loadMetrics() {
+            const { doc, getDoc } = window.firebase;
+            const configRef = doc(window.db, "settings", "config");
             
-            alert("✅ All mock data and settings have been reset.");
-            loadMetrics(); // Update dashboard
-            loadSettings(); // Update config fields
-        }
-    }
+            document.getElementById('metrics-loading').style.display = 'block';
+            document.getElementById('metrics-display').style.display = 'none';
+            document.getElementById('metrics-error').style.display = 'none';
 
-    // Run on page load
-    window.onload = checkAdminAccess;
-  </script>
+            try {
+                const docSnap = await getDoc(configRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('totalIncome').textContent = `₦${(data.totalIncome || 0).toLocaleString()}`;
+                    document.getElementById('totalGenerations').textContent = (data.totalGenerations || 0).toLocaleString();
+                    document.getElementById('totalDownloads').textContent = (data.totalDownloads || 0).toLocaleString();
+                } else {
+                    document.getElementById('totalIncome').textContent = '₦0';
+                    document.getElementById('totalGenerations').textContent = '0';
+                    document.getElementById('totalDownloads').textContent = '0';
+                }
+                document.getElementById('metrics-display').style.display = 'grid';
+            } catch (error) {
+                console.error("Error loading metrics:", error);
+                document.getElementById('metrics-error').style.display = 'block';
+            } finally {
+                document.getElementById('metrics-loading').style.display = 'none';
+            }
+        }
+
+        // --- Settings Management (FIRESTORE READ & WRITE) ---
+        async function loadSettings() {
+            const { doc, getDoc } = window.firebase;
+            const configRef = doc(window.db, "settings", "config");
+            
+            try {
+                const docSnap = await getDoc(configRef);
+                const data = docSnap.exists() ? docSnap.data() : {};
+                
+                const apiKey = data.apiKey || MOCK_ADMIN_API_KEY;
+                // Clean the price string from '₦' and ensure it's a number for the input field
+                const price = parseInt((data.documentPrice || '₦500').replace('₦', '') || '500');
+
+                document.getElementById('apiKey').value = apiKey;
+                document.getElementById('documentPrice').value = price;
+            } catch (error) {
+                console.error("Error loading settings:", error);
+                showModal("❌ Could not load settings from database.");
+            }
+        }
+
+        document.getElementById('settingsForm').addEventListener('submit', saveSettings);
+        
+        async function saveSettings(event) {
+            event.preventDefault();
+            
+            const { doc, updateDoc, serverTimestamp } = window.firebase;
+            const configRef = doc(window.db, "settings", "config");
+            
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const priceInput = document.getElementById('documentPrice').value;
+            const price = `₦${parseInt(priceInput)}`;
+
+            if (!apiKey || isNaN(parseInt(priceInput))) {
+                showModal("Error: Please provide a mock API key and a valid price (number).");
+                return;
+            }
+
+            try {
+                await updateDoc(configRef, {
+                    apiKey: apiKey,
+                    documentPrice: price,
+                    lastUpdated: serverTimestamp()
+                });
+                
+                // IMPORTANT: Update localStorage to trigger the 'storage' event on all user tabs
+                localStorage.setItem(STORAGE_PREFIX + 'api_key', apiKey);
+                localStorage.setItem(STORAGE_PREFIX + 'price', price);
+                
+                showModal(`✅ Settings Saved! Price set to: ${price}`);
+                loadSettings(); // Refresh form display
+            } catch (error) {
+                console.error("Error saving settings:", error);
+                showModal("❌ Error saving settings to Firestore.");
+            }
+        }
+
+        // --- User Data Table (FIRESTORE READ) ---
+        async function loadUserDataTable() {
+            const { collection, getDocs, query, orderBy } = window.firebase;
+            const tableBody = document.getElementById('usersTableBody');
+            
+            tableBody.innerHTML = ''; // Clear existing data
+            document.getElementById('users-loading').style.display = 'block';
+            document.getElementById('usersTable').style.display = 'none';
+
+            try {
+                // Query the 'users' collection, ordered by last generated time
+                const usersCol = collection(window.db, "users");
+                const q = query(usersCol, orderBy("lastGenerated", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                querySnapshot.forEach((doc) => {
+                    const user = doc.data();
+                    const lastActivity = user.lastGenerated ? new Date(user.lastGenerated.toDate()).toLocaleString() : 'N/A';
+                    
+                    const row = tableBody.insertRow();
+                    row.insertCell(0).textContent = user.name || 'N/A';
+                    row.insertCell(1).textContent = user.email || 'N/A';
+                    row.insertCell(2).textContent = user.documentType || 'N/A';
+                    row.insertCell(3).textContent = user.generations || 1;
+                    row.insertCell(4).textContent = lastActivity;
+                });
+
+                document.getElementById('usersTable').style.display = 'table';
+            } catch (error) {
+                console.error("Error loading user data:", error);
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Failed to load user data from Firestore.</td></tr>';
+                document.getElementById('usersTable').style.display = 'table'; // Show table with error message
+            } finally {
+                document.getElementById('users-loading').style.display = 'none';
+            }
+        }
+
+        function showModal(message) {
+          const modal = document.createElement('div');
+          modal.className = 'modal';
+          modal.textContent = message;
+          document.body.appendChild(modal);
+          modal.offsetWidth; 
+          modal.classList.add('show');
+          setTimeout(() => {
+              modal.classList.remove('show');
+              setTimeout(() => modal.remove(), 500);
+          }, 4000);
+        }
+    </script>
 </body>
 </html>
