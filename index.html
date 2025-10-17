@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI-Powered Job Document Generator - Jobletters.xyz</title>
     
+    <meta name="description" content="Generate professional, customized job documents (Résumés, Cover Letters, Resignation, Academic) instantly using advanced AI technology.">
+
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0047ab">
 
@@ -20,11 +22,10 @@
         getDoc, 
         setDoc, 
         updateDoc, 
-        collection, 
         serverTimestamp, 
         increment 
       } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"; 
-      
+
       const firebaseConfig = {
         apiKey: "AIzaSyDLGrQQd2SEppdZooI7VWV7I7h4l_QAdZs",
         authDomain: "jobletters-3c5ea.firebaseapp.com",
@@ -34,23 +35,163 @@
         appId: "1:473489426093:web:fae4d21f759d14837aa824",
         measurementId: "G-TR8CQ7EP54"
       };
-      
+
       const app = initializeApp(firebaseConfig);
-      const analytics = getAnalytics(app);
+      window.analytics = getAnalytics(app);
       window.db = getFirestore(app); 
       
+      // Expose Firestore methods globally for the main script
       window.firebase = { 
-          doc, getDoc, setDoc, updateDoc, collection, 
+          doc, getDoc, setDoc, updateDoc, 
           serverTimestamp, increment 
       };
     </script>
 
     <style>
-        /* CSS STYLES (Omitted for brevity, assumed correct) */
+        /* ------------------------------------- */
+        /* Global Styles and Utilities */
+        /* ------------------------------------- */
+        :root {
+            --primary: #0047ab;
+            --secondary: #667eea;
+            --accent: #ffd700;
+            --bg-color: #f7f9fc;
+            --text-color: #333;
+            --card-bg: white;
+            --gradient-main: linear-gradient(135deg, var(--primary) 0%, #0066cc 100%);
+            --gradient-ai: linear-gradient(135deg, var(--secondary) 0%, #764ba2 100%);
+        }
+        * { box-sizing: border-box; scroll-behavior: smooth; }
+        body { font-family: 'Montserrat', sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-color); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        a { color: var(--primary); text-decoration: none; transition: color 0.3s ease; }
+        a:hover { color: #0056b3; }
+        .hidden { display: none !important; }
+
+        /* Header & Nav */
+        header { background: var(--gradient-main); color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .logo { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .logo i { color: var(--accent); margin-right: 8px; }
+        .ai-badge { background: linear-gradient(135deg, #ff6b6b, var(--accent)); padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; color: #000; }
+        .hamburger { font-size: 28px; cursor: pointer; display: none; color: white; transition: transform 0.3s ease; }
         
-        /* --- PRINT FIX: Hide everything except the document preview --- */
+        nav { display: flex; gap: 20px; }
+        nav a { color: white; font-weight: 500; font-size: 16px; position: relative; }
+        nav a::after { content: ''; position: absolute; width: 0%; height: 2px; bottom: -4px; left: 0; background-color: var(--accent); transition: width 0.3s ease; }
+        nav a:hover::after { width: 100%; }
+        
+        @media (max-width: 768px) {
+            nav { position: fixed; top: 60px; right: 0; background: var(--primary); height: calc(100% - 60px); width: 200px; flex-direction: column; padding: 20px; transform: translateX(100%); transition: transform 0.3s ease; box-shadow: -2px 0 6px rgba(0,0,0,0.2); }
+            nav.open { transform: translateX(0); }
+            nav a { padding: 15px 0; font-size: 18px; }
+            .hamburger { display: block; }
+        }
+
+        /* Main Content and Forms */
+        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        
+        .hero { background: var(--card-bg); padding: 40px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.07); margin-bottom: 30px; }
+        .hero h1 { font-size: 28px; font-weight: 700; color: var(--primary); margin-top: 0; display: flex; align-items: center; gap: 10px; }
+        .hero h1 i { color: var(--accent); }
+        
+        .form-section { background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        
+        /* Form Element Styles */
+        label { font-weight: 600; margin-top: 20px; display: block; }
+        input[type="text"], input[type="email"], textarea, select { 
+            font-family: 'Montserrat', sans-serif; 
+            font-size: 16px; 
+            border-radius: 6px; 
+            border: 1.5px solid #ccc; 
+            padding: 12px 15px; 
+            margin: 5px 0 0; 
+            width: 100%; 
+            transition: border-color 0.3s ease; 
+            outline-offset: 2px;
+        }
+        input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 6px rgba(0, 71, 171, 0.2); }
+        textarea { min-height: 120px; resize: vertical; }
+
+        /* Buttons */
+        .button { 
+            border: none; 
+            color: white; 
+            font-weight: 700; 
+            padding: 15px 30px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            transition: opacity 0.3s ease, transform 0.2s ease; 
+            margin-top: 25px; 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        #generateBtn { background: var(--gradient-ai); width: 100%; font-size: 18px; }
+        #generateBtn:hover { opacity: 0.95; transform: translateY(-1px); }
+        #generateBtn:disabled { background: #ccc; cursor: not-allowed; }
+        #generateBtn.ai-generating { background: #ff6b6b; cursor: wait; }
+        
+        /* Preview Section */
+        #preview-section { margin-top: 40px; background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        #preview-section h2 { color: #28a745; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
+        
+        /* DRAFT SECURITY: Disable Copying and Selection */
+        #letter { 
+            white-space: pre-wrap; 
+            font-family: monospace; 
+            background: #fafafa; 
+            padding: 15px; 
+            border: 1px dashed #ccc; 
+            border-radius: 6px; 
+            max-height: 400px; 
+            overflow-y: auto; 
+            margin-bottom: 20px;
+            /* Disable Selection and Copying */
+            -webkit-user-select: none;  /* Safari */
+            -moz-user-select: none;     /* Firefox */
+            -ms-user-select: none;      /* IE10+ */
+            user-select: none;          /* Standard */
+            cursor: default;
+        }
+        
+        /* Enable Selection on Payment */
+        #letter.unlocked {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+            cursor: text;
+        }
+
+        .preview-actions { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+        .preview-actions button, .preview-actions a { flex: 1; min-width: 150px; max-width: 250px; font-size: 16px; }
+        
+        #payBtn { background: linear-gradient(45deg, #ffc107, #ff9800); color: var(--text-color); }
+        #payBtn:disabled { background: #ccc; cursor: not-allowed; }
+        #downloadBtn { background: linear-gradient(45deg, #28a745, #1e7e34); display: none; }
+        #downloadBtn:disabled { background: #ccc; cursor: not-allowed; }
+        #regenerateBtn { background-color: #007bff; }
+
+        /* Disable buttons on the final draft until payment */
+        .disabled-action { opacity: 0.6; cursor: not-allowed !important; }
+
+        
+        /* Spinner */
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid white; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Modal (For alerts/messages) */
+        .modal { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 100%); background: #333; color: white; padding: 15px 25px; border-radius: 8px; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.5s ease-out; opacity: 0; }
+        .modal.error { background-color: #dc3545; }
+        .modal.show { transform: translate(-50%, 0); opacity: 1; }
+
+        /* Footer */
+        footer { background-color: #222; color: #ccc; padding: 25px 20px; text-align: center; font-size: 14px; margin-top: 40px; }
+        footer a { color: var(--accent); font-weight: 600; }
+
+        /* Print Styles (Crucial for Print Button) */
         @media print {
-            body > *:not(main), header, footer, .preview-actions, #preview-section h2 {
+            body > *:not(main), header, footer, .preview-actions, .hero, .form-section {
                 display: none !important;
             }
             .container {
@@ -58,11 +199,10 @@
                 margin: 0 !important;
                 padding: 0 !important;
                 box-shadow: none !important;
-                background: white !important;
             }
             #preview-section {
                 padding: 0 !important;
-                margin: 0 !important;
+                margin: 0 !!important;
                 box-shadow: none !important;
                 background: white !important;
             }
@@ -70,241 +210,203 @@
                 max-height: none !important;
                 overflow: visible !important;
                 border: none !important;
-                padding: 1in !important; 
-                -webkit-user-select: text !important;
+                padding: 1in !important; /* Standard print margin */
                 user-select: text !important;
                 font-family: 'Times New Roman', serif; 
                 font-size: 12pt;
                 white-space: pre-wrap;
             }
         }
-
-        /* ... (rest of the base styles remain the same) ... */
-        :root { --primary: #0047ab; --secondary: #667eea; --accent: #ffd700; --bg-color: #f7f9fc; --text-color: #333; --card-bg: white; --success: #28a745; --warning: #ffc107; --danger: #dc3545; }
-        * { box-sizing: border-box; }
-        body { font-family: 'Montserrat', sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-color); }
-        header { background: var(--primary); color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .logo { font-size: 24px; font-weight: 700; display: flex; align-items: center; }
-        .logo i { margin-right: 10px; color: var(--accent); }
-        .logo span { background-color: var(--accent); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 14px; font-weight: 700; margin-left: 10px; }
-        .hamburger { font-size: 24px; cursor: pointer; display: block; }
-        nav { position: fixed; top: 0; right: -300px; width: 300px; height: 100%; background: #003380; padding-top: 60px; transition: right 0.3s ease-in-out; z-index: 999; box-shadow: -5px 0 15px rgba(0,0,0,0.3); }
-        nav.open { right: 0; }
-        nav a { color: white; padding: 15px 20px; text-decoration: none; display: block; border-bottom: 1px solid #0047ab; transition: background-color 0.2s; }
-        nav a:hover { background-color: var(--primary); }
-        .container { max-width: 800px; margin: 30px auto; padding: 20px; background: var(--card-bg); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        h2 { color: var(--primary); text-align: center; margin-top: 0; font-size: 28px; }
-        h2 i { color: var(--accent); margin-right: 10px; }
-        form label { display: block; font-weight: 600; margin-top: 15px; }
-        form input, form select, form textarea { font-family: 'Montserrat', sans-serif; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; padding: 12px; margin-top: 5px; width: 100%; resize: vertical; }
-        .document-select-container { background: #e6f0ff; border: 1px solid var(--primary); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .document-select-container label { color: var(--primary); font-size: 18px; font-weight: 700; }
-        .btn-primary { background: var(--primary); color: white; padding: 15px 30px; border: none; border-radius: 8px; font-size: 18px; font-weight: 700; cursor: pointer; transition: background-color 0.3s; margin-top: 20px; width: 100%; }
-        .btn-primary:hover:not(:disabled) { background: #003380; }
-        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
-        .ai-generating { background: var(--secondary) !important; animation: pulse 1s infinite alternate; }
-        @keyframes pulse { from { opacity: 1; } to { opacity: 0.8; } }
-        .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid white; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; margin-left: 10px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Preview Section Styles */
-        #preview-section { margin-top: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        #preview-section h2 { font-size: 24px; color: var(--success); }
-        #letter { min-height: 400px; padding: 15px; border: 1px dashed #ccc; background-color: #f9f9f9; white-space: pre-wrap; font-family: monospace; overflow-y: auto; max-height: 450px; user-select: none; /* Prevent selection before payment */ }
-        
-        /* Action Buttons */
-        .preview-actions { margin-top: 20px; text-align: center; }
-        .preview-actions button { display: block; width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background-color 0.3s; }
-        #regenerateBtn { background: var(--primary); color: white; }
-        #payBtn { background: var(--accent); color: var(--primary); }
-        #downloadBtn { background: var(--success); color: white; display: none; }
-        .preview-actions button.disabled-action { background: #ccc; color: #666; cursor: not-allowed; }
-        .small-action-btns { display: flex; justify-content: space-around; margin-top: 15px; }
-        .small-action-btns button { background: none; color: var(--primary); border: 1px solid #eee; padding: 10px 15px; width: 48%; }
-        
-        /* Modal */
-        .modal { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 100%); background: var(--primary); color: white; padding: 15px 25px; border-radius: 8px; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.5s ease-out, opacity 0.5s; opacity: 0; }
-        .modal.error { background: var(--danger); }
-        .modal.show { transform: translate(-50%, 0); opacity: 1; }
-        
-        /* Footer */
-        footer { text-align: center; padding: 20px; margin-top: 40px; border-top: 1px solid #eee; font-size: 14px; color: #777; }
-        .hidden { display: none !important; }
     </style>
 </head>
 <body>
     <header>
-        <div class="logo"><i class="fas fa-envelope"></i> Jobletters.xyz <span>AI POWERED</span></div>
-        <div id="hamburger" class="hamburger">&#9776;</div>
-        <nav id="navMenu">
-            <a href="index.html">Generate Document</a>
-            <a href="pricing.html">Pricing (Mock)</a>
-            <a href="how-it-works.html">How It Works</a>
-            <a href="contact.html">Contact Support</a>
-            <a href="admin.html" id="adminLink" class="hidden"><i class="fas fa-lock"></i> Admin Panel</a>
+        <div class="logo" aria-label="Jobletters.xyz Logo">
+            <a href="/index.html" style="color: white; text-decoration: none; display: flex; align-items: center;">
+                <i class="fas fa-envelope"></i> Jobletters.xyz
+            </a>
+            <span class="ai-badge">AI POWERED</span>
+        </div>
+        <div class="hamburger" id="hamburger" aria-label="Menu" role="button" tabindex="0">
+            <i class="fas fa-bars"></i>
+        </div>
+        <nav id="navMenu" aria-label="Primary Navigation">
+            <a href="/index.html">Home</a>
+            <a href="/how-it-works.html">How It Works</a>
+            <a href="/pricing.html">Pricing</a>
+            <a href="/contact.html">Contact</a>
+            <a href="/admin.html" id="adminLink" class="hidden">Admin</a>
         </nav>
     </header>
 
     <main class="container">
-        <h2>🤖 AI-Powered Job Document Generator</h2>
-        <p style="text-align: center; color: #555;">Create perfectly tailored professional documents using advanced AI. Just provide your details and let AI craft the perfect document for you.</p>
+        
+        <section class="hero">
+            <h1><i class="fas fa-robot"></i> AI-Powered Job Document Generator</h1>
+            <p>Create perfectly tailored professional documents using advanced AI. Just provide your details and let AI craft the perfect document for you.</p>
 
-        <div class="document-select-container">
-            <label for="documentType">Select Document Type</label>
-            <select id="documentType" onchange="showForm(this.value)">
-                <option value="">-- Select Document Type --</option>
+            <label for="documentType">Select Document Type *</label>
+            <select id="documentType" onchange="showForm(this.value)" required>
+                <option value="">-- Select Document --</option>
                 <option value="resume">Professional Résumé / CV</option>
-                <option value="coverLetter">Cover Letter</option>
-                <option value="resignation">Resignation Letter</option>
-                <option value="academic">Academic Letter / Statement</option>
+                <option value="coverLetter">Job Application Cover Letter</option>
+                <option value="resignation">Formal Resignation Letter</option>
+                <option value="academic">Academic Letter (Student Request/Apology)</option>
             </select>
-        </div>
+        </section>
 
-        <div id="formsContainer">
-            <div id="resumeForm" class="hidden">
-                <label for="fullName">Full Name *</label>
-                <input type="text" id="fullName" placeholder="Precious Naza Raymond Nwachukwu" required />
+        <section class="form-section">
+            <div id="formsContainer">
                 
-                <label for="email">Email Address *</label>
-                <input type="email" id="email" placeholder="name@example.com" required />
-                
-                <label>
-                    <input type="checkbox" id="saveDataCheckbox"> Save my name and email for next time.
-                </label>
+                <div id="resumeForm" class="hidden">
+                    <h3>Résumé / CV Details</h3>
+                    <label for="fullName">Full Name *</label>
+                    <input type="text" id="fullName" placeholder="Jane Doe" required />
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" placeholder="janedoe@example.com" required />
+                    
+                    <div style="margin-top: 10px; display: flex; align-items: center;">
+                        <input type="checkbox" id="saveDataCheckbox" style="width: auto; margin: 0 10px 0 0;" />
+                        <label for="saveDataCheckbox" style="margin: 0; display: inline-block; font-weight: 400;">
+                            <i class="fas fa-save" style="color: var(--primary);"></i> Save my name and email for next time.
+                        </label>
+                    </div>
 
-                <label for="experience">Work Experience Summary * (2-3 Key Achievements/Roles)</label>
-                <textarea id="experience" rows="4" placeholder="Managed a team of 5, boosting sales by 20% in Q4. Developed and launched a new CRM system."></textarea>
-                
-                <label for="education">Education / Certifications * (Degree, School, Year)</label>
-                <textarea id="education" rows="3" placeholder="B.Sc. Computer Science, University of Lagos (2018). Certified Scrum Master."></textarea>
-
-                <label for="skills">Key Skills * (Comma Separated)</label>
-                <input type="text" id="skills" placeholder="Python, SQL, Project Management, Leadership" />
-            </div>
-
-            <div id="coverLetterForm" class="hidden">
-                <label for="cl_fullName">Your Full Name *</label>
-                <input type="text" id="cl_fullName" required />
-                
-                <label for="cl_jobTitle">Target Job Title *</label>
-                <input type="text" id="cl_jobTitle" placeholder="Senior Software Engineer" required />
-                
-                <label for="cl_companyName">Company Name *</label>
-                <input type="text" id="cl_companyName" required />
-                
-                <label for="cl_experience">Specific Relevant Experience * (2-3 bullet points)</label>
-                <textarea id="cl_experience" rows="5" placeholder="Led a 6-month migration project to AWS cloud, cutting hosting costs by 15%."></textarea>
-            </div>
-
-            <div id="resignationForm" class="hidden">
-                <label for="rl_fullName">Your Full Name *</label>
-                <input type="text" id="rl_fullName" required />
-                
-                <label for="rl_position">Your Position *</label>
-                <input type="text" id="rl_position" required />
-                
-                <label for="rl_lastDay">Last Day of Employment *</label>
-                <input type="date" id="rl_lastDay" required />
-
-                <label for="rl_reason">Reason for Resignation (Optional, but recommended)</label>
-                <textarea id="rl_reason" rows="3" placeholder="Pursuing a new opportunity for professional growth."></textarea>
-            </div>
-
-            <div id="academicForm" class="hidden">
-                <label for="ac_fullName">Your Full Name *</label>
-                <input type="text" id="ac_fullName" required />
-                
-                <label for="ac_matricNumber">Matriculation / Student Number *</label>
-                <input type="text" id="ac_matricNumber" required />
-
-                <label for="ac_recipient">Recipient *</label>
-                <select id="ac_recipient" required>
-                    <option value="">-- Select Recipient --</option>
-                    <option value="HOD">Head of Department (HOD)</option>
-                    <option value="Dean">Dean of Faculty</option>
-                    <option value="Registrar">University Registrar</option>
-                    <option value="Lecturer">Specific Lecturer</option>
-                </select>
-                
-                <label for="ac_purpose">Purpose of Letter *</label>
-                <select id="ac_purpose" onchange="updateAcademicPrompt(this.value)" required>
-                    <option value="">-- Select Purpose --</option>
-                    <option value="course_change">Course Add/Drop Request</option>
-                    <option value="result_statement">Request for Statement of Result</option>
-                    <option value="apology">Formal Apology</option>
-                    <option value="other">Other Formal Request</option>
-                </select>
-
-                <label for="ac_details" id="ac_details_label">Details / Justification *</label>
-                <textarea id="ac_details" rows="5" placeholder="State the details, dates, and justification for your request."></textarea>
-            </div>
-        </div>
-
-        <button id="generateBtn" class="btn-primary hidden" onclick="generateDocument()">
-            <i class="fas fa-magic"></i> Generate AI-Enhanced Document
-        </button>
-
-        <div id="preview-section" class="hidden">
-            <h2 id="preview-title"><i class="fas fa-file-alt"></i> Document Preview (AI Draft)</h2>
-            <div id="letter" contenteditable="true" spellcheck="false">
+                    <label for="experience">Work Experience Summary *</label>
+                    <textarea id="experience" placeholder="Briefly list 3-5 key roles, achievements, and responsibilities (e.g., 'Led a 5-person team, increasing efficiency by 20%')."></textarea>
+                    <label for="education">Education / Certifications *</label>
+                    <input type="text" id="education" placeholder="e.g. B.Sc. Computer Science, University of Lagos (2018)" required />
+                    <label for="skills">Key Skills (Comma Separated) *</label>
+                    <input type="text" id="skills" placeholder="e.g. Python, SQL, Agile, Project Management" required />
                 </div>
 
+                <div id="coverLetterForm" class="hidden">
+                    <h3>Cover Letter Details</h3>
+                    <label for="cl_fullName">Your Full Name *</label>
+                    <input type="text" id="cl_fullName" placeholder="Jane Doe" required />
+                    <label for="cl_jobTitle">Target Job Title *</label>
+                    <input type="text" id="cl_jobTitle" placeholder="e.g. Senior Software Developer" required />
+                    <label for="cl_companyName">Company Name *</label>
+                    <input type="text" id="cl_companyName" placeholder="e.g. TechCorp Solutions" required />
+                    <label for="cl_experience">Specific Experience/Achievements *</label>
+                    <textarea id="cl_experience" placeholder="Detail 2-3 specific achievements relevant to the job description that show impact."></textarea>
+                </div>
+
+                <div id="resignationForm" class="hidden">
+                    <h3>Resignation Letter Details</h3>
+                    <label for="rl_fullName">Your Full Name *</label>
+                    <input type="text" id="rl_fullName" placeholder="John Smith" required />
+                    <label for="rl_position">Your Current Position *</label>
+                    <input type="text" id="rl_position" placeholder="e.g. Marketing Executive" required />
+                    <label for="rl_lastDay">Intended Last Day of Employment *</label>
+                    <input type="text" id="rl_lastDay" placeholder="e.g. October 30, 2025 (Allowing for notice period)" required />
+                    <label for="rl_reason">Reason for Resignation (Optional, for draft inclusion)</label>
+                    <textarea id="rl_reason" placeholder="e.g. Pursuing a new career opportunity; Relocation; Personal reasons."></textarea>
+                </div>
+                
+                <div id="academicForm" class="hidden">
+                    <h3>Academic Letter Details (Student)</h3>
+                    <label for="ac_fullName">Your Full Name *</label>
+                    <input type="text" id="ac_fullName" placeholder="e.g. John Kalu" aria-label="Your Full Name" required />
+                    <label for="ac_matricNumber">Matric/Student Number *</label>
+                    <input type="text" id="ac_matricNumber" placeholder="e.g. 2022/COM/005" aria-label="Matric Number" required />
+                    <label for="ac_recipient">Recipient *</label>
+                    <select id="ac_recipient" aria-label="Recipient" required>
+                        <option value="HOD">Head of Department (HOD)</option>
+                        <option value="Dean">Dean of Faculty</option>
+                        <option value="Registrar">Registrar/Exams Office</option>
+                        <option value="Lecturer">Specific Lecturer</option>
+                    </select>
+                    <label for="ac_purpose">Purpose of Letter *</label>
+                    <select id="ac_purpose" onchange="updateAcademicPrompt(this.value)" aria-label="Purpose" required>
+                        <option value="">-- Select Purpose --</option>
+                        <option value="course_change">Request for Course Change/Addition</option>
+                        <option value="result_statement">Request for Statement of Result</option>
+                        <option value="apology">Apology for Absence/Misconduct</option>
+                        <option value="deferment">Request for Deferment of Study</option>
+                    </select>
+                    <label for="ac_details" id="ac_details_label">Details / Justification *</label>
+                    <textarea id="ac_details" placeholder="Explain the reasons (e.g., the specific course names, dates of absence, or reason for deferment)..." aria-label="Details / Justification" required></textarea>
+                </div>
+            </div>
+
+            <button id="generateBtn" class="button hidden" onclick="generateDocument()">
+                <i class="fas fa-magic"></i> Generate AI-Enhanced Document
+            </button>
+        </section>
+
+        <section id="preview-section" class="hidden">
+            <h2><i class="fas fa-file-alt"></i> Document Preview (AI Draft)</h2>
+            <div id="letter" oncontextmenu="return false;"></div> 
             <div class="preview-actions">
-                <button id="regenerateBtn" onclick="regenerateDocument()">
+                <button id="regenerateBtn" class="button" onclick="regenerateDocument()">
                     <i class="fas fa-sync-alt"></i> Regenerate
                 </button>
-
-                <button id="payBtn" onclick="handlePayment()">
-                    💳 Pay <span id="currentPrice">₦500</span> & Download
+                <button id="payBtn" class="button" onclick="handlePayment()">
+                    <i class="fas fa-credit-card"></i> Pay <span id="currentPrice">₦500</span> & Download
                 </button>
-
-                <button id="downloadBtn" onclick="downloadPDF()">
+                <button id="downloadBtn" class="button disabled-action" onclick="downloadPDF()" disabled>
                     <i class="fas fa-download"></i> Download PDF
                 </button>
-
-                <div class="small-action-btns">
-                    <button id="emailBtn" onclick="emailDocument()" class="disabled-action" disabled>
-                        <i class="fas fa-envelope"></i> Email Document
-                    </button>
-                    <button id="printBtn" onclick="printDocument()" class="disabled-action" disabled>
-                        <i class="fas fa-print"></i> Print Draft
-                    </button>
-                </div>
             </div>
-        </div>
+            <div style="text-align: center; margin-top: 15px; font-size: 0.9em; color: #555;">
+                <button id="emailBtn" class="button disabled-action" style="background-color: #f8f9fa; color: var(--text-color); margin-top: 0;" onclick="emailDocument()" disabled>
+                    <i class="fas fa-envelope-open-text"></i> Email Document
+                </button>
+                <button id="printBtn" class="button disabled-action" style="background-color: #f8f9fa; color: var(--text-color); margin-top: 0;" onclick="printDocument()" disabled>
+                    <i class="fas fa-print"></i> Print Draft
+                </button>
+            </div>
+        </section>
+        
     </main>
 
     <footer>
-        &copy; 2025 Jobletters.xyz. All rights reserved. <br> Powered by AI Technology
+        <p>&copy; 2025 Jobletters.xyz. All rights reserved.</p>
+        <p>Powered by AI Technology</p>
     </footer>
-    
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
-        // Global variables and constants
         const STORAGE_PREFIX = 'jobletters_';
+        const DEFAULT_MOCK_API_KEY = 'sk-jobletters-default-mock-key'; 
         const FLUTTERWAVE_PAY_LINK = "https://flutterwave.com/pay/uwoq2lwqfocj";
         const SESSION_PAID_FLAG = 'payment_confirmed'; // NEW: Flag for session persistence
-        
-        const MOCK_ADMIN_API_KEY = ""; 
-        
+
         let currentDocumentType = "";
         let generatedDocumentText = "";
         let isPaid = false; 
 
-        // --- Payment Confirmation Functions ---
+        // --- PWA Service Worker Registration ---
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js').then(registration => {
+              console.log('SW registered: ', registration);
+            }).catch(registrationError => {
+              console.log('SW registration failed: ', registrationError);
+            });
+          });
+        }
+
+        // --- Menu Toggle Script ---
+        const hamburger = document.getElementById('hamburger');
+        const navMenu = document.getElementById('navMenu');
+        hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
+
+        // --- NEW: Payment Persistence & Firebase Metrics ---
         
         /**
          * Checks the sessionStorage flag and unlocks the document if paid.
          */
         function checkSessionPayment() {
             if (sessionStorage.getItem(SESSION_PAID_FLAG) === 'true') {
-                // If the flag is set, this means the user returned from payment
-                // UNLOCK the document.
+                // UNLOCK the document and update metrics 
+                updatePaidMetrics(); // Update metrics in Firebase/Mock
                 updateDownloadButtons(true);
                 showModal("🎉 Payment confirmed! Your document is unlocked.", false);
                 
-                // Clear the flag after confirming and unlocking to prevent infinite refresh loops
+                // Clear the flag after confirming and unlocking to prevent future unlocks
                 sessionStorage.removeItem(SESSION_PAID_FLAG); 
                 return true;
             }
@@ -318,7 +420,7 @@
              const priceText = document.getElementById('currentPrice').textContent.replace('₦', '');
              const numericPrice = parseInt(priceText.replace(/[^\d]/g, '') || '500'); 
                      
-             if (window.db) {
+             if (window.db && window.firebase) {
                  const { doc, updateDoc, increment, serverTimestamp } = window.firebase;
                  const configRef = doc(window.db, "settings", "config");
                  try {
@@ -330,199 +432,294 @@
                  } catch (error) {
                      console.error("Error updating metrics in Firestore:", error);
                  }
+             } else {
+                 // Fallback to local storage mock
+                 incrementMetric('income', numericPrice);
+                 incrementMetric('downloads');
              }
         }
         
-        // --- Initialization ---
+        // --- Load/Save Data Functions (MOCK ACCOUNT) ---
+        function loadSavedData() {
+            if (document.getElementById('saveDataCheckbox')) {
+                if (localStorage.getItem(STORAGE_PREFIX + 'saveDataCheckbox') === 'true') {
+                    document.getElementById('saveDataCheckbox').checked = true;
+                    document.getElementById('fullName').value = localStorage.getItem(STORAGE_PREFIX + 'fullName') || '';
+                    document.getElementById('email').value = localStorage.getItem(STORAGE_PREFIX + 'email') || '';
+                }
+            }
+        }
+        
+        function saveData(data) {
+            let savedUsers = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'savedUsers') || '[]');
+            
+            const contactData = {
+                name: data.name,
+                email: data.email,
+                lastGenerated: new Date().toISOString()
+            };
 
-        // (Service worker and Menu toggle scripts remain the same)
+            // 1. Handle Contact Auto-fill Save
+            if (document.getElementById('saveDataCheckbox')?.checked) {
+                localStorage.setItem(STORAGE_PREFIX + 'saveDataCheckbox', 'true');
+                localStorage.setItem(STORAGE_PREFIX + 'fullName', contactData.name);
+                localStorage.setItem(STORAGE_PREFIX + 'email', contactData.email);
+            } else {
+                localStorage.removeItem(STORAGE_PREFIX + 'saveDataCheckbox');
+                localStorage.removeItem(STORAGE_PREFIX + 'fullName');
+                localStorage.removeItem(STORAGE_PREFIX + 'email');
+            }
+
+            // 2. Save user for Admin Mock Data Table 
+            const existingIndex = savedUsers.findIndex(user => user.email === contactData.email);
+            if (existingIndex > -1) {
+                savedUsers[existingIndex] = contactData;
+            } else {
+                savedUsers.push(contactData);
+            }
+            localStorage.setItem(STORAGE_PREFIX + 'savedUsers', JSON.stringify(savedUsers));
+        }
 
         /**
-         * Initializes the app by fetching admin settings from Firestore.
+         * Initializes the app by fetching settings from Firestore and checking payment status.
          */
         async function initApp() {
-            // ... (Firebase setup and config fetch remain the same) ...
-            if (!window.db || !window.firebase) {
-                console.error("Firebase/Firestore not initialized. Cannot fetch settings.");
-                localStorage.setItem(STORAGE_PREFIX + 'api_key', MOCK_ADMIN_API_KEY);
-                updatePriceDisplay();
-                loadSavedData();
-                return;
-            }
-            
-            const { doc, getDoc, setDoc, serverTimestamp } = window.firebase;
-            const configRef = doc(window.db, "settings", "config");
-            let apiKey = MOCK_ADMIN_API_KEY;
-            let price = '₦500';
-            
-            try {
-                const docSnap = await getDoc(configRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    apiKey = data.apiKey || MOCK_ADMIN_API_KEY;
-                    price = data.documentPrice || '₦500';
-                } else {
-                    await setDoc(configRef, { 
-                        apiKey: MOCK_ADMIN_API_KEY, 
-                        documentPrice: '₦500',
-                        totalIncome: 0,
-                        totalGenerations: 0,
-                        totalDownloads: 0,
-                        lastUpdated: serverTimestamp()
-                    });
-                }
-            } catch (error) {
-                console.warn("Network/Firestore error fetching settings. Using fallback key/price.", error);
-                showModal("❌ ERROR: Cannot connect to settings. Check security rules.", true);
+            // FIX 1: Ensure default mock API key is set
+            if (!localStorage.getItem(STORAGE_PREFIX + 'api_key')) {
+                localStorage.setItem(STORAGE_PREFIX + 'api_key', DEFAULT_MOCK_API_KEY);
             }
 
-            localStorage.setItem(STORAGE_PREFIX + 'api_key', apiKey);
-            localStorage.setItem(STORAGE_PREFIX + 'price', price);
-            
             if (localStorage.getItem(STORAGE_PREFIX + 'admin_access') === 'granted') {
                 document.getElementById('adminLink').classList.remove('hidden');
             }
             
-            updatePriceDisplay();
+            let price = localStorage.getItem(STORAGE_PREFIX + 'price') || '₦500';
+            
+            // FIX 2: Fetch price and API key from Firebase (Robustness)
+            if (window.db && window.firebase) {
+                const { doc, getDoc, setDoc, serverTimestamp } = window.firebase;
+                const configRef = doc(window.db, "settings", "config");
+                try {
+                    const docSnap = await getDoc(configRef);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        const fetchedKey = data.apiKey || DEFAULT_MOCK_API_KEY;
+                        price = data.documentPrice || '₦500';
+                        localStorage.setItem(STORAGE_PREFIX + 'api_key', fetchedKey);
+                        localStorage.setItem(STORAGE_PREFIX + 'price', price);
+                    } else {
+                        // Initialize Firestore with default values if not exists
+                        await setDoc(configRef, { 
+                            apiKey: DEFAULT_MOCK_API_KEY, 
+                            documentPrice: '₦500',
+                            totalIncome: 0,
+                            totalGenerations: 0,
+                            totalDownloads: 0,
+                            lastUpdated: serverTimestamp()
+                        });
+                    }
+                } catch (error) {
+                    console.warn("Network/Firestore error fetching settings. Using fallback key/price.", error);
+                    // showModal("❌ ERROR: Cannot connect to settings. Using local fallback.", true);
+                }
+            }
+
+            document.getElementById('currentPrice').textContent = price;
             loadSavedData();
             document.getElementById('letter').oncontextmenu = () => false; 
 
-            // NEW: Check for payment confirmation immediately after app initialization
-            // This is crucial for handling the redirect from the payment gateway.
+            // FIX 3: Crucial Check for payment confirmation immediately on page load
             checkSessionPayment();
         };
 
         window.addEventListener('load', () => {
+             // Delay to ensure Firebase SDK loads
              setTimeout(initApp, 500); 
         });
 
-        // (Load/Save Data, Price Sync, Form Logic, and Generation Logic remain the same)
+        // --- Form Display Logic ---
+        function showForm(docType) {
+          const forms = document.querySelectorAll('#formsContainer > div');
+          forms.forEach(form => form.classList.add('hidden'));
 
-
-        // --- Payment Handler (FIXED LOGIC) ---
-        
-        // NEW: This is the mock function the payment gateway would redirect to (e.g., at /success)
-        function mockPaymentSuccess() {
-            // 1. Set the flag so the page refresh (return) will see it
-            sessionStorage.setItem(SESSION_PAID_FLAG, 'true'); 
-            
-            // 2. Update Firestore metrics immediately
-            updatePaidMetrics(); 
-            
-            // 3. Immediately unlock the document and tell the user (if they are still on this window)
-            updateDownloadButtons(true);
-            showModal("✅ Payment confirmed! Document unlocked.", false);
-
-            // 4. (MOCK) Remove the temporary success flag after a few seconds
-            setTimeout(() => {
-                sessionStorage.removeItem(SESSION_PAID_FLAG);
-            }, 5000); 
-            
-            // 5. Scroll to the document
-            document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+          if (docType) {
+              const formId = docType + 'Form';
+              document.getElementById(formId).classList.remove('hidden');
+              document.getElementById('generateBtn').classList.remove('hidden');
+              // Only hide preview if not already paid from a previous session
+              if (!isPaid) {
+                document.getElementById('preview-section').classList.add('hidden');
+              }
+          } else {
+              document.getElementById('generateBtn').classList.add('hidden');
+              document.getElementById('preview-section').classList.add('hidden');
+          }
+          currentDocumentType = docType;
+          // IMPORTANT: Reset payment status ONLY if a new document is selected AND we didn't just return from a payment.
+          if (sessionStorage.getItem(SESSION_PAID_FLAG) !== 'true') {
+             isPaid = false; 
+             updateDownloadButtons(false);
+          }
         }
 
-
-        async function handlePayment() {
-            showModal("💳 Redirecting to Flutterwave for secure payment... Please wait.", false);
-            
-            // Clear any old payment flags
-            sessionStorage.removeItem(SESSION_PAID_FLAG);
-
-            // --- MOCK PAYMENT REDIRECT SIMULATION ---
-            // In a real application:
-            // 1. The button click sends user data to your backend.
-            // 2. The backend generates a payment link (Flutterwave) and a unique payment ID.
-            // 3. The user is redirected to Flutterwave.
-            // 4. Flutterwave redirects to your "success URL" (e.g., index.html?status=success) or calls a webhook.
-
-            // Since we cannot redirect back to this page with a parameter easily, 
-            // we will simulate the success **after a delay** and then call the mock success function.
-            
-            // We'll simulate the user going to Flutterwave, paying, and immediately returning.
-            
-            // 1. Open the payment page (optional, but good UX)
-            window.open(FLUTTERWAVE_PAY_LINK, '_blank', 'width=800,height=600');
-            
-            // 2. Wait a moment to simulate the user paying (1.5 seconds)
-            await new Promise(resolve => setTimeout(resolve, 1500)); 
-
-            // 3. Prompt the user to confirm if they paid. This simulates the backend confirmation.
-            const paid = confirm("Did you successfully complete the payment on the external payment page?");
-
-            if (paid) {
-                // If user confirms, call the mock success function
-                mockPaymentSuccess();
+        // --- Academic Prompt Helper ---
+        function updateAcademicPrompt(purpose) {
+            const label = document.getElementById('ac_details_label');
+            if (purpose === 'course_change') {
+                label.textContent = "Courses to Add/Drop and Justification *";
+            } else if (purpose === 'result_statement') {
+                label.textContent = "Specify Academic Session(s) and Reason for Request *";
+            } else if (purpose === 'apology') {
+                label.textContent = "Dates and Circumstances Requiring Apology *";
             } else {
-                showModal("❌ Payment not confirmed. Document remains locked.", true);
+                label.textContent = "Details / Justification *";
             }
         }
 
-        // --- Download Button Control Function (Remains the same) ---
+        // --- Core Generation Logic ---
+        async function generateDocument() {
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.innerHTML = 'AI is Drafting... <span class="spinner"></span>';
+            btn.classList.add('ai-generating');
+            document.getElementById('preview-section').classList.add('hidden');
+            document.getElementById('letter').classList.remove('unlocked'); // Lock selection
+
+            if (!validateForm(currentDocumentType)) {
+                showModal("⚠️ Please fill in all required fields (*).");
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
+                btn.classList.remove('ai-generating');
+                return;
+            }
+
+            const data = collectFormData(currentDocumentType);
+            
+            if (currentDocumentType === 'resume' || currentDocumentType === 'coverLetter') {
+                 saveData(data);
+            }
+
+            const adminKey = localStorage.getItem(STORAGE_PREFIX + 'api_key');
+            if (!adminKey || adminKey === '') {
+                 showModal("🔑 System error: AI Key not configured. Cannot generate document.", true);
+                 btn.disabled = false;
+                 btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
+                 btn.classList.remove('ai-generating');
+                 return;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 2000)); 
+            const mockGeneratedText = mockAIGenerator(currentDocumentType, data);
+            
+            // Update Metrics (Real or Mock)
+            if (window.db && window.firebase) {
+                 const { doc, updateDoc, increment } = window.firebase;
+                 const configRef = doc(window.db, "settings", "config");
+                 try {
+                     await updateDoc(configRef, { totalGenerations: increment(1) });
+                 } catch (e) {
+                     console.warn("Could not increment Firestore generation count.");
+                     incrementMetric('generations'); // Fallback
+                 }
+            } else {
+                 incrementMetric('generations'); // Fallback
+            }
+
+            // Display Results
+            generatedDocumentText = mockGeneratedText;
+            document.getElementById('letter').textContent = generatedDocumentText;
+            
+            document.getElementById('preview-section').classList.remove('hidden');
+            document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+            
+            isPaid = false; // Always reset to unpaid after a new generation
+            updateDownloadButtons(false);
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
+            btn.classList.remove('ai-generating');
+            showModal("✅ AI Draft complete! Review and Download.");
+        }
+        
+        function regenerateDocument() {
+            generateDocument();
+            showModal("🔄 Regenerating document...");
+        }
+
+        // --- Download Button Control Function ---
         function updateDownloadButtons(paidStatus) {
             isPaid = paidStatus;
             const payBtn = document.getElementById('payBtn');
             const downloadBtn = document.getElementById('downloadBtn');
             const emailBtn = document.getElementById('emailBtn');
             const printBtn = document.getElementById('printBtn');
+            const letterDiv = document.getElementById('letter');
 
             if (paidStatus) {
                 payBtn.style.display = 'none';
-                downloadBtn.style.display = 'block';
+                downloadBtn.style.display = 'inline-flex';
+                downloadBtn.disabled = false;
+                downloadBtn.classList.remove('disabled-action');
                 emailBtn.disabled = false;
                 emailBtn.classList.remove('disabled-action');
                 printBtn.disabled = false;
                 printBtn.classList.remove('disabled-action');
-                document.getElementById('letter').style.userSelect = 'text'; 
+                letterDiv.classList.add('unlocked'); // Enable selection/copying
             } else {
-                payBtn.style.display = 'block';
+                payBtn.style.display = 'inline-flex';
                 downloadBtn.style.display = 'none';
+                downloadBtn.disabled = true;
+                downloadBtn.classList.add('disabled-action');
                 emailBtn.disabled = true;
                 emailBtn.classList.add('disabled-action');
                 printBtn.disabled = true;
                 printBtn.classList.add('disabled-action');
-                document.getElementById('letter').style.userSelect = 'none'; 
+                letterDiv.classList.remove('unlocked'); // Disable selection/copying
             }
         }
-
-        // (The rest of the functions: generateDocument, collectFormData, mockAIGenerator, 
-        // downloadPDF, printDocument, emailDocument, showModal, and the Admin cheat 
-        // code remain the same as the last corrected version.)
         
-        // --- Print Document (Relies on CSS, assumed correct) ---
-        function printDocument() { 
-            if (!isPaid) {
-                 showModal("❌ Please complete payment to print the final document.", true);
-                 return;
-            }
-            window.print(); 
-        }
-
-        // --- Email Document (Relies on mailto:, assumed correct) ---
-        function emailDocument() { 
-            if (!isPaid) {
-                 showModal("❌ Please complete payment to email the final document.", true);
-                 return;
-            }
-            
-            const emailData = collectFormData(currentDocumentType);
-            const subject = `Your ${document.getElementById('documentType').options[document.getElementById('documentType').selectedIndex].text} from Jobletters.xyz`;
-            const body = `Dear ${emailData.name || 'User'},\n\nAttached is your final AI-generated document:\n\n---\n${generatedDocumentText}\n---`;
-            const userEmail = emailData.email || document.getElementById('email')?.value || '';
-            
-            if (!userEmail) {
-                showModal("⚠️ Please enter your email in the form before attempting to email.", true);
+        // --- Payment Handler (FIXED LOGIC) ---
+        async function handlePayment() {
+            if (generatedDocumentText === "") {
+                showModal("⚠️ Please generate a document first!", true);
                 return;
             }
+            showModal("💳 Redirecting to Flutterwave for secure payment... Please wait.", false);
             
-            window.location.href = `mailto:${userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            // Clear any old payment flags
+            sessionStorage.removeItem(SESSION_PAID_FLAG);
 
-            showModal("📧 Opening your email client..."); 
+            // Open payment link in a new tab
+            window.open(FLUTTERWAVE_PAY_LINK, '_blank', 'noopener,noreferrer');
+            
+            // --- ACTUAL FIX: PROMPT USER TO CONFIRM PAYMENT ---
+            // A real app would check a backend webhook here. Since we don't have one, 
+            // we simulate the user returning to this page and confirming.
+            
+            // Wait for 3 seconds to let the user open the window
+            await new Promise(resolve => setTimeout(resolve, 3000)); 
+
+            const paid = confirm("Did you successfully complete the payment in the new window/tab? Click OK to unlock your document.");
+
+            if (paid) {
+                // If user confirms, set the flag and immediately unlock
+                // The next refresh (if it happens) will pick this up in checkSessionPayment()
+                sessionStorage.setItem(SESSION_PAID_FLAG, 'true'); 
+                
+                // Perform the unlock actions immediately
+                updatePaidMetrics(); 
+                updateDownloadButtons(true);
+                showModal("🎉 Payment successful! Your document is now unlocked.", false);
+                document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+                
+            } else {
+                showModal("❌ Payment not confirmed. Document remains locked.", true);
+            }
         }
-
-        // (The rest of the helper functions are omitted for brevity...)
+        
+        // --- Core Generator Functions (Unchanged) ---
         function collectFormData(docType) {
-             if (docType === 'resume') {
+            if (docType === 'resume') {
                 return {
                     name: document.getElementById('fullName').value,
                     email: document.getElementById('email').value,
@@ -534,7 +731,7 @@
             if (docType === 'coverLetter') {
                 return {
                     name: document.getElementById('cl_fullName').value,
-                    email: document.getElementById('email') ? document.getElementById('email').value : '', 
+                    email: document.getElementById('email')?.value || '', // Pulling from Resume Form for consistency
                     jobTitle: document.getElementById('cl_jobTitle').value,
                     companyName: document.getElementById('cl_companyName').value,
                     experience: document.getElementById('cl_experience').value,
@@ -543,7 +740,6 @@
             if (docType === 'resignation') {
                 return {
                     name: document.getElementById('rl_fullName').value,
-                    email: document.getElementById('email') ? document.getElementById('email').value : '',
                     position: document.getElementById('rl_position').value,
                     lastDay: document.getElementById('rl_lastDay').value,
                     reason: document.getElementById('rl_reason').value,
@@ -552,7 +748,6 @@
             if (docType === 'academic') {
                 return {
                     name: document.getElementById('ac_fullName').value,
-                    email: document.getElementById('email') ? document.getElementById('email').value : '',
                     matricNumber: document.getElementById('ac_matricNumber').value,
                     recipient: document.getElementById('ac_recipient').value,
                     purpose: document.getElementById('ac_purpose').value,
@@ -563,28 +758,34 @@
         }
 
         function mockAIGenerator(docType, data) {
-             if (docType === "resume") {
+            if (docType === "resume") {
                 return `PROFESSIONAL RÉSUMÉ - AI GENERATED 
 ${'='.repeat(60)}
 ${data.name.toUpperCase()}
-${data.email} | (Details Hidden)
+${data.email} | (Contact details formatted professionally)
 ${'='.repeat(60)}
 
 SUMMARY
-A highly accomplished professional with experience in:
+A highly accomplished professional with a track record in:
 ${data.experience.split('\n').map(line => `• ${line.trim()}`).join('\n')}
 
 EDUCATION
 ${data.education}
 
 KEY SKILLS
-${data.skills}
+${data.skills.split(',').map(s => s.trim()).join(' | ')}
 ---
-AI Note: This is a powerful, concise draft designed for maximum impact.`;
+AI Note: This is a powerful, ATS-friendly draft designed for maximum impact.`;
             } else if (docType === "academic") {
                  const currentDate = new Date().toLocaleDateString('en-GB');
                  const purposeTitle = data.purpose.replace(/_/g, ' ').toUpperCase();
-                 const recipientTitle = data.recipient === 'HOD' ? 'The Head of Department' : data.recipient === 'Dean' ? 'The Dean of Faculty' : data.recipient === 'Registrar' ? 'The University Registrar' : 'A Specific Lecturer';
+                 const recipientMap = {
+                     'HOD': 'The Head of Department', 
+                     'Dean': 'The Dean of Faculty', 
+                     'Registrar': 'The University Registrar', 
+                     'Lecturer': 'A Specific Lecturer'
+                 };
+                 const recipientTitle = recipientMap[data.recipient] || 'The Relevant Authority';
                  const salutation = data.recipient === 'Lecturer' ? 'Dear Sir/Madam,' : `Dear ${data.recipient},`;
 
                  return `${currentDate}
@@ -617,12 +818,12 @@ ${data.matricNumber}`;
                  return `[Date]
 
 [Hiring Manager Name]
-[Company Name]
+${data.companyName}
 [Company Address]
 
 Dear [Hiring Manager],
 
-I am writing to express my enthusiastic interest in the ${data.jobTitle} position at ${data.companyName}. With a background in ${data.experience.split('\n')[0].substring(0, 50)}..., I possess the necessary skills to excel.
+I am writing to express my enthusiastic interest in the ${data.jobTitle} position at ${data.companyName}. Based on my proven ability to ${data.experience.split('\n')[0].substring(0, 50)}..., I am confident in my ability to deliver immediate value.
 
 I look forward to discussing how my experience can benefit your team.
 
@@ -636,16 +837,39 @@ ${data.name}`;
 
 Dear [Manager Name],
 
-Please accept this letter as formal notification that I am resigning from my position as ${data.position}, effective ${data.lastDay}. My reason for leaving is ${data.reason}.
+Please accept this letter as formal notification that I am resigning from my position as ${data.position}, effective ${data.lastDay}. My reason for leaving is: ${data.reason || 'to pursue other career opportunities'}.
 
-Thank you for the opportunity to work here.
+Thank you for the opportunity to work here. I wish the company all the best in the future.
 
 Sincerely,
 ${data.name}`;
             }
             return "AI could not generate document. Please provide more detailed input.";
         }
+        
+        // --- Metric Management (Mocked using localStorage) ---
+        function incrementMetric(key, value = 1) {
+            let current = parseInt(localStorage.getItem(STORAGE_PREFIX + key) || '0');
+            current += value;
+            localStorage.setItem(STORAGE_PREFIX + key, current);
+        }
+        
+        // --- Utility Functions ---
+        function validateForm(docType) { 
+          // Simplified validation for required fields
+          if (docType === "resume") {
+                return document.getElementById('fullName').value && document.getElementById('email').value && document.getElementById('experience').value && document.getElementById('education').value && document.getElementById('skills').value;
+            } else if (docType === "coverLetter") {
+                 return document.getElementById('cl_fullName').value && document.getElementById('cl_jobTitle').value && document.getElementById('cl_companyName').value && document.getElementById('cl_experience').value;
+            } else if (docType === "resignation") {
+                 return document.getElementById('rl_fullName').value && document.getElementById('rl_position').value && document.getElementById('rl_lastDay').value;
+            } else if (docType === "academic") {
+                 return document.getElementById('ac_fullName').value && document.getElementById('ac_matricNumber').value && document.getElementById('ac_purpose').value && document.getElementById('ac_details').value;
+            }
+          return true; 
+        }
 
+        // Mock PDF Download (Only works if paid)
         function downloadPDF() { 
             if (!isPaid) {
                  showModal("❌ Please complete payment to download the final document.", true);
@@ -660,11 +884,44 @@ ${data.name}`;
             const filename = `${docTypeDisplay.replace(/[^a-zA-Z0-9]/g, '_')}_Generated.pdf`;
 
             doc.setFontSize(12);
+            // Split text to handle line breaks for PDF
             const lines = doc.splitTextToSize(generatedDocumentText, 180);
             doc.text(lines, 10, 10);
             doc.save(filename);
 
             showModal("✅ PDF downloaded successfully!");
+        }
+
+        // Print Document (Only works if paid)
+        function printDocument() { 
+            if (!isPaid) {
+                 showModal("❌ Please complete payment to print the final document.", true);
+                 return;
+            }
+            // Uses CSS print media query to hide everything but the letter
+            window.print(); 
+        }
+
+        // Email Document (Only works if paid)
+        function emailDocument() { 
+            if (!isPaid) {
+                 showModal("❌ Please complete payment to email the final document.", true);
+                 return;
+            }
+            
+            const emailData = collectFormData(currentDocumentType);
+            const subject = `Your ${document.getElementById('documentType').options[document.getElementById('documentType').selectedIndex].text} from Jobletters.xyz`;
+            const body = `Dear ${emailData.name || 'User'},\n\nYour final AI-generated document is below:\n\n---\n${generatedDocumentText}\n---`;
+            const userEmail = emailData.email || document.getElementById('email')?.value || '';
+            
+            if (!userEmail) {
+                showModal("⚠️ Please enter your email in the Résumé/CV form before attempting to email.", true);
+                return;
+            }
+            
+            window.location.href = `mailto:${userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+            showModal("📧 Opening your email client..."); 
         }
 
         function showModal(message, isError = false) {
@@ -679,6 +936,22 @@ ${data.name}`;
               setTimeout(() => modal.remove(), 500);
           }, 4000);
         }
+        
+        // Admin access cheat code
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+Shift+A (or Cmd+Shift+A on Mac) for Admin Login
+            if (e.shiftKey && (e.ctrlKey || e.metaKey) && e.key === 'A') {
+                e.preventDefault();
+                const password = prompt("Admin Secret Code:");
+                if (password === 'jobadmin2025') { 
+                    localStorage.setItem(STORAGE_PREFIX + 'admin_access', 'granted');
+                    document.getElementById('adminLink').classList.remove('hidden');
+                    showModal("🔑 Admin access granted! Link is in the top menu.");
+                } else if (password !== null) {
+                    showModal("❌ Invalid Secret Code.", true);
+                }
+            }
+        });
     </script>
 </body>
 </html>
