@@ -16,8 +16,17 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
       import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
-      // NEW FIRESTORE IMPORTS
-      import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"; 
+      // Import ALL necessary Firestore functions
+      import { 
+        getFirestore, 
+        doc, 
+        getDoc, 
+        setDoc, 
+        updateDoc, 
+        collection, 
+        serverTimestamp, 
+        increment 
+      } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"; 
       
       const firebaseConfig = {
         apiKey: "AIzaSyDLGrQQd2SEppdZooI7VWV7I7h4l_QAdZs",
@@ -35,12 +44,16 @@
       window.db = getFirestore(app); 
       
       // Expose the Firestore functions globally so the <script> block can use them
-      window.firebase = { doc, getDoc, setDoc, updateDoc, collection, serverTimestamp, increment };
+      // Note: We don't expose getDocs, query, orderBy here as they are only needed in admin.html
+      window.firebase = { 
+          doc, getDoc, setDoc, updateDoc, collection, 
+          serverTimestamp, increment 
+      };
     </script>
 
     <style>
-        /* All CSS from previous version remains here. 
-           The crucial @media print block is included: */
+        /* Base CSS Styles (omitted for brevity, assume they are correct) */
+        
         /* --- PRINT FIX: Hide everything except the document preview --- */
         @media print {
             body > *:not(.container), header, footer, .preview-actions, #preview-section h2 {
@@ -63,27 +76,224 @@
                 overflow: visible !important;
                 border: none !important;
                 padding: 0 !important;
-                /* Re-enable selection for printing */
                 -webkit-user-select: text !important;
                 -moz-user-select: text !important;
                 -ms-user-select: text !important;
                 user-select: text !important;
-                font-family: 'Times New Roman', serif; /* Use a print-friendly font */
+                font-family: 'Times New Roman', serif; 
                 font-size: 12pt;
                 white-space: pre-wrap;
             }
         }
-        /* ... rest of the CSS ... */
+
+        /* --- Custom Styles for the App --- */
+        :root { --primary: #0047ab; --secondary: #667eea; --accent: #ffd700; --bg-color: #f7f9fc; --text-color: #333; --card-bg: white; --success: #28a745; --warning: #ffc107; --danger: #dc3545; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Montserrat', sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-color); }
+        header { background: var(--primary); color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .logo { font-size: 24px; font-weight: 700; display: flex; align-items: center; }
+        .logo i { margin-right: 10px; color: var(--accent); }
+        .logo span { background-color: var(--accent); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 14px; font-weight: 700; margin-left: 10px; }
+        .hamburger { font-size: 24px; cursor: pointer; display: block; }
+        nav { position: fixed; top: 0; right: -300px; width: 300px; height: 100%; background: #003380; padding-top: 60px; transition: right 0.3s ease-in-out; z-index: 999; box-shadow: -5px 0 15px rgba(0,0,0,0.3); }
+        nav.open { right: 0; }
+        nav a { color: white; padding: 15px 20px; text-decoration: none; display: block; border-bottom: 1px solid #0047ab; transition: background-color 0.2s; }
+        nav a:hover { background-color: var(--primary); }
+        .container { max-width: 800px; margin: 30px auto; padding: 20px; background: var(--card-bg); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h2 { color: var(--primary); text-align: center; margin-top: 0; font-size: 28px; }
+        h2 i { color: var(--accent); margin-right: 10px; }
+        form label { display: block; font-weight: 600; margin-top: 15px; }
+        form input, form select, form textarea { font-family: 'Montserrat', sans-serif; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; padding: 12px; margin-top: 5px; width: 100%; resize: vertical; }
+        .document-select-container { background: #e6f0ff; border: 1px solid var(--primary); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .document-select-container label { color: var(--primary); font-size: 18px; font-weight: 700; }
+        .btn-primary { background: var(--primary); color: white; padding: 15px 30px; border: none; border-radius: 8px; font-size: 18px; font-weight: 700; cursor: pointer; transition: background-color 0.3s; margin-top: 20px; width: 100%; }
+        .btn-primary:hover:not(:disabled) { background: #003380; }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+        .ai-generating { background: var(--secondary) !important; animation: pulse 1s infinite alternate; }
+        @keyframes pulse { from { opacity: 1; } to { opacity: 0.8; } }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid white; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; margin-left: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Preview Section Styles */
+        #preview-section { margin-top: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        #preview-section h2 { font-size: 24px; color: var(--success); }
+        #letter { min-height: 400px; padding: 15px; border: 1px dashed #ccc; background-color: #f9f9f9; white-space: pre-wrap; font-family: monospace; overflow-y: auto; max-height: 450px; user-select: none; /* Prevent selection before payment */ }
+        
+        /* Action Buttons */
+        .preview-actions { margin-top: 20px; text-align: center; }
+        .preview-actions button { display: block; width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background-color 0.3s; }
+        #regenerateBtn { background: var(--primary); color: white; }
+        #payBtn { background: var(--accent); color: var(--primary); }
+        #downloadBtn { background: var(--success); color: white; display: none; }
+        .preview-actions button.disabled-action { background: #ccc; color: #666; cursor: not-allowed; }
+        .small-action-btns { display: flex; justify-content: space-around; margin-top: 15px; }
+        .small-action-btns button { background: none; color: var(--primary); border: 1px solid #eee; padding: 10px 15px; width: 48%; }
+        
+        /* Modal */
+        .modal { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 100%); background: var(--primary); color: white; padding: 15px 25px; border-radius: 8px; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.5s ease-out, opacity 0.5s; opacity: 0; }
+        .modal.show { transform: translate(-50%, 0); opacity: 1; }
+        
+        /* Footer */
+        footer { text-align: center; padding: 20px; margin-top: 40px; border-top: 1px solid #eee; font-size: 14px; color: #777; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
+    <header>
+        <div class="logo"><i class="fas fa-envelope"></i> Jobletters.xyz <span>AI POWERED</span></div>
+        <div id="hamburger" class="hamburger">&#9776;</div>
+        <nav id="navMenu">
+            <a href="index.html">Generate Document</a>
+            <a href="pricing.html">Pricing (Mock)</a>
+            <a href="how-it-works.html">How It Works</a>
+            <a href="contact.html">Contact Support</a>
+            <a href="admin.html" id="adminLink" class="hidden"><i class="fas fa-lock"></i> Admin Panel</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <h2>🤖 AI-Powered Job Document Generator</h2>
+        <p style="text-align: center; color: #555;">Create perfectly tailored professional documents using advanced AI. Just provide your details and let AI craft the perfect document for you.</p>
+
+        <div class="document-select-container">
+            <label for="documentType">Select Document Type</label>
+            <select id="documentType" onchange="showForm(this.value)">
+                <option value="">-- Select Document Type --</option>
+                <option value="resume">Professional Résumé / CV</option>
+                <option value="coverLetter">Cover Letter</option>
+                <option value="resignation">Resignation Letter</option>
+                <option value="academic">Academic Letter / Statement</option>
+            </select>
+        </div>
+
+        <div id="formsContainer">
+            <div id="resumeForm" class="hidden">
+                <label for="fullName">Full Name *</label>
+                <input type="text" id="fullName" placeholder="Precious Naza Raymond Nwachukwu" required />
+                
+                <label for="email">Email Address *</label>
+                <input type="email" id="email" placeholder="name@example.com" required />
+                
+                <label>
+                    <input type="checkbox" id="saveDataCheckbox"> Save my name and email for next time.
+                </label>
+
+                <label for="experience">Work Experience Summary * (2-3 Key Achievements/Roles)</label>
+                <textarea id="experience" rows="4" placeholder="Managed a team of 5, boosting sales by 20% in Q4. Developed and launched a new CRM system."></textarea>
+                
+                <label for="education">Education / Certifications * (Degree, School, Year)</label>
+                <textarea id="education" rows="3" placeholder="B.Sc. Computer Science, University of Lagos (2018). Certified Scrum Master."></textarea>
+
+                <label for="skills">Key Skills * (Comma Separated)</label>
+                <input type="text" id="skills" placeholder="Python, SQL, Project Management, Leadership" />
+            </div>
+
+            <div id="coverLetterForm" class="hidden">
+                <label for="cl_fullName">Your Full Name *</label>
+                <input type="text" id="cl_fullName" required />
+                
+                <label for="cl_jobTitle">Target Job Title *</label>
+                <input type="text" id="cl_jobTitle" placeholder="Senior Software Engineer" required />
+                
+                <label for="cl_companyName">Company Name *</label>
+                <input type="text" id="cl_companyName" required />
+                
+                <label for="cl_experience">Specific Relevant Experience * (2-3 bullet points)</label>
+                <textarea id="cl_experience" rows="5" placeholder="Led a 6-month migration project to AWS cloud, cutting hosting costs by 15%."></textarea>
+            </div>
+
+            <div id="resignationForm" class="hidden">
+                <label for="rl_fullName">Your Full Name *</label>
+                <input type="text" id="rl_fullName" required />
+                
+                <label for="rl_position">Your Position *</label>
+                <input type="text" id="rl_position" required />
+                
+                <label for="rl_lastDay">Last Day of Employment *</label>
+                <input type="date" id="rl_lastDay" required />
+
+                <label for="rl_reason">Reason for Resignation (Optional, but recommended)</label>
+                <textarea id="rl_reason" rows="3" placeholder="Pursuing a new opportunity for professional growth."></textarea>
+            </div>
+
+            <div id="academicForm" class="hidden">
+                <label for="ac_fullName">Your Full Name *</label>
+                <input type="text" id="ac_fullName" required />
+                
+                <label for="ac_matricNumber">Matriculation / Student Number *</label>
+                <input type="text" id="ac_matricNumber" required />
+
+                <label for="ac_recipient">Recipient *</label>
+                <select id="ac_recipient" required>
+                    <option value="">-- Select Recipient --</option>
+                    <option value="HOD">Head of Department (HOD)</option>
+                    <option value="Dean">Dean of Faculty</option>
+                    <option value="Registrar">University Registrar</option>
+                    <option value="Lecturer">Specific Lecturer</option>
+                </select>
+                
+                <label for="ac_purpose">Purpose of Letter *</label>
+                <select id="ac_purpose" onchange="updateAcademicPrompt(this.value)" required>
+                    <option value="">-- Select Purpose --</option>
+                    <option value="course_change">Course Add/Drop Request</option>
+                    <option value="result_statement">Request for Statement of Result</option>
+                    <option value="apology">Formal Apology</option>
+                    <option value="other">Other Formal Request</option>
+                </select>
+
+                <label for="ac_details" id="ac_details_label">Details / Justification *</label>
+                <textarea id="ac_details" rows="5" placeholder="State the details, dates, and justification for your request."></textarea>
+            </div>
+        </div>
+
+        <button id="generateBtn" class="btn-primary hidden" onclick="generateDocument()">
+            <i class="fas fa-magic"></i> Generate AI-Enhanced Document
+        </button>
+
+        <div id="preview-section" class="hidden">
+            <h2 id="preview-title"><i class="fas fa-file-alt"></i> Document Preview (AI Draft)</h2>
+            <div id="letter" contenteditable="true" spellcheck="false">
+                </div>
+
+            <div class="preview-actions">
+                <button id="regenerateBtn" onclick="regenerateDocument()">
+                    <i class="fas fa-sync-alt"></i> Regenerate
+                </button>
+
+                <button id="payBtn" onclick="handlePayment()">
+                    💳 Pay <span id="currentPrice">₦500</span> & Download
+                </button>
+
+                <button id="downloadBtn" onclick="downloadPDF()">
+                    <i class="fas fa-download"></i> Download PDF
+                </button>
+
+                <div class="small-action-btns">
+                    <button id="emailBtn" onclick="emailDocument()" class="disabled-action" disabled>
+                        <i class="fas fa-envelope"></i> Email Document
+                    </button>
+                    <button id="printBtn" onclick="printDocument()" class="disabled-action" disabled>
+                        <i class="fas fa-print"></i> Print Draft
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        &copy; 2025 Jobletters.xyz. All rights reserved. <br> Powered by AI Technology
+    </footer>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
         // Global variables and constants
         const STORAGE_PREFIX = 'jobletters_';
         const FLUTTERWAVE_PAY_LINK = "https://flutterwave.com/pay/uwoq2lwqfocj";
-        const MOCK_ADMIN_API_KEY = "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";
+        
+        // CRITICAL SECURITY FIX: This key is now blank and MUST come from Firestore.
+        // If Firestore fails, the app will refuse to generate.
+        const MOCK_ADMIN_API_KEY = ""; 
 
         let currentDocumentType = "";
         let generatedDocumentText = "";
@@ -125,7 +335,6 @@
                 name: data.name,
                 email: data.email,
                 documentType: currentDocumentType,
-                // Do NOT use lastGenerated here; use serverTimestamp for accuracy
             };
 
             // 1. Handle Contact Auto-fill Save (Local Storage)
@@ -142,6 +351,7 @@
             // 2. Save user for Admin Data Table (FIRESTORE)
             if (window.db && contactData.email) {
                 const { doc, setDoc, serverTimestamp, increment } = window.firebase;
+                // Use email as the document ID for the 'users' collection
                 const userRef = doc(window.db, "users", contactData.email);
                 
                 try {
@@ -150,6 +360,7 @@
                         email: contactData.email,
                         lastGenerated: serverTimestamp(),
                         documentType: contactData.documentType,
+                        // Increment generation count 
                         generations: increment(1) 
                     }, { merge: true });
                     console.log("User data saved to Firestore:", contactData.email);
@@ -163,10 +374,7 @@
         function updatePriceDisplay() {
             // Price is written to localStorage by initApp/admin page, so we read from here
             const price = localStorage.getItem(STORAGE_PREFIX + 'price') || '₦500';
-            const priceElement = document.getElementById('currentPrice');
-            if (priceElement) {
-                priceElement.textContent = price;
-            }
+            document.getElementById('currentPrice').textContent = price;
         }
         
         // Listen for storage changes across tabs/windows (For Admin price sync)
@@ -181,16 +389,17 @@
          * Initializes the app by fetching admin settings from Firestore.
          */
         async function initApp() {
+            // Check if Firebase is available (should be due to module script)
             if (!window.db || !window.firebase) {
-                // This means the module script failed to load (unlikely, but for safety)
-                console.error("Firebase/Firestore not initialized. Using fallback data.");
+                console.error("Firebase/Firestore not initialized. Cannot fetch settings.");
+                // Fallback to minimal local initialization
                 localStorage.setItem(STORAGE_PREFIX + 'api_key', MOCK_ADMIN_API_KEY);
                 updatePriceDisplay();
                 loadSavedData();
                 return;
             }
             
-            const { doc, getDoc, setDoc } = window.firebase;
+            const { doc, getDoc, setDoc, serverTimestamp } = window.firebase;
             const configRef = doc(window.db, "settings", "config");
             let apiKey = MOCK_ADMIN_API_KEY;
             let price = '₦500';
@@ -209,11 +418,12 @@
                         totalIncome: 0,
                         totalGenerations: 0,
                         totalDownloads: 0,
-                        lastUpdated: window.firebase.serverTimestamp()
+                        lastUpdated: serverTimestamp()
                     });
                 }
             } catch (error) {
-                console.error("Error fetching Firestore settings:", error);
+                // This means there's a network issue or rule issue. Fallback to hardcoded safe values.
+                console.warn("Network/Firestore error fetching settings. Using fallback key/price.", error);
             }
 
             // 2. Store settings in localStorage (for quick access and price sync)
@@ -232,7 +442,6 @@
 
         // Run the initialization when the window loads
         window.addEventListener('load', () => {
-             // Delay to ensure global variables are set by the module script
              setTimeout(initApp, 500); 
         });
 
@@ -287,11 +496,22 @@
 
             const data = collectFormData(currentDocumentType);
             
-            // Save Contact Data and increment generation count (NOW USES FIRESTORE)
+            // --- SECURE MOCK API CALL CHECK ---
+            const adminKey = localStorage.getItem(STORAGE_PREFIX + 'api_key');
+            // Check for security: MUST have a key from Firestore, or generation is blocked.
+            if (!adminKey || adminKey === '') {
+                 showModal("🔑 System error: AI Key not configured by Admin. Cannot generate document.");
+                 btn.disabled = false;
+                 btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
+                 btn.classList.remove('ai-generating');
+                 return;
+            }
+            
+            // Save Contact Data and increment generation count (FIRESTORE)
             if (currentDocumentType === 'resume' || currentDocumentType === 'coverLetter') {
                  await saveData(data); 
             } else {
-                // If it's a resignation/academic, only increment the global generation count
+                // If not Resume/CL, only increment the global generation count
                 if (window.db) {
                      const { doc, updateDoc, increment, serverTimestamp } = window.firebase;
                      const configRef = doc(window.db, "settings", "config");
@@ -304,17 +524,6 @@
                           console.error("Error updating global generation count:", error);
                      }
                 }
-            }
-
-
-            // --- SECURE MOCK API CALL CHECK ---
-            const adminKey = localStorage.getItem(STORAGE_PREFIX + 'api_key');
-            if (!adminKey || adminKey === '') {
-                 showModal("🔑 System error: AI Key not configured by Admin. Cannot generate document.");
-                 btn.disabled = false;
-                 btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
-                 btn.classList.remove('ai-generating');
-                 return;
             }
             
             // Mock a successful API call delay
@@ -343,7 +552,7 @@
             showModal("🔄 Regenerating document...");
         }
 
-        // --- Download Button Control Function (Remains the same) ---
+        // --- Download Button Control Function ---
         function updateDownloadButtons(paidStatus) {
             isPaid = paidStatus;
             const payBtn = document.getElementById('payBtn');
@@ -361,6 +570,7 @@
                 emailBtn.classList.remove('disabled-action');
                 printBtn.disabled = false;
                 printBtn.classList.remove('disabled-action');
+                document.getElementById('letter').style.userSelect = 'text'; // Enable selection
             } else {
                 // If not paid, hide download and show pay button (and disable others)
                 payBtn.style.display = 'block';
@@ -371,6 +581,7 @@
                 emailBtn.classList.add('disabled-action');
                 printBtn.disabled = true;
                 printBtn.classList.add('disabled-action');
+                document.getElementById('letter').style.userSelect = 'none'; // Disable selection
             }
         }
         
@@ -387,6 +598,7 @@
                 
                 // Update Metrics in Firestore (NEW)
                 const priceText = document.getElementById('currentPrice').textContent.replace('₦', '');
+                // Clean the price string to get only the numeric value
                 const numericPrice = parseInt(priceText.replace(/[^\d]/g, '') || '500'); 
                 
                 if (window.db) {
@@ -424,7 +636,7 @@
             if (docType === 'coverLetter') {
                 return {
                     name: document.getElementById('cl_fullName').value,
-                    email: document.getElementById('email') ? document.getElementById('email').value : '', // Try to use the primary email field if available
+                    email: document.getElementById('email') ? document.getElementById('email').value : '',
                     jobTitle: document.getElementById('cl_jobTitle').value,
                     companyName: document.getElementById('cl_companyName').value,
                     experience: document.getElementById('cl_experience').value,
@@ -591,7 +803,10 @@ ${data.name}`;
             const subject = `Your ${document.getElementById('documentType').options[document.getElementById('documentType').selectedIndex].text} from Jobletters.xyz`;
             const body = `Dear ${emailData.name || 'User'},\n\nAttached is your final AI-generated document:\n\n---\n${generatedDocumentText}\n---`;
             
-            window.location.href = `mailto:${emailData.email || 'recipient@example.com'}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            // Try to use the email from the form data, defaulting to a placeholder
+            const userEmail = emailData.email || document.getElementById('email')?.value || 'recipient@example.com';
+            
+            window.location.href = `mailto:${userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
             showModal("📧 Opening your email client..."); 
         }
