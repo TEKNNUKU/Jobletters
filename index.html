@@ -97,6 +97,15 @@
         .hero { background: var(--card-bg); padding: 40px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.07); margin-bottom: 30px; }
         .hero h1 { font-size: 28px; font-weight: 700; color: var(--primary); margin-top: 0; display: flex; align-items: center; gap: 10px; }
         .hero h1 i { color: var(--accent); }
+
+            h3 {
+      margin-top: 35px;
+      color: #0047ab;
+      user-select: none;
+    }
+    p {
+      line-height: 1.5;
+    }
         
         .form-section { background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         
@@ -190,6 +199,30 @@
         .modal.error { background-color: #dc3545; }
         .modal.show { transform: translate(-50%, 0); opacity: 1; }
 
+            /* Social Share buttons */
+    .social-share {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 35px 0 0;
+    }
+    
+    .social-share button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 24px;
+      color: #007bff;
+      transition: color 0.3s ease;
+      user-select: none;
+      width: auto;
+      margin: 0;
+    }
+    
+    .social-share button:hover {
+      color: #0056b3;
+    }
+
         /* Footer */
         footer { background-color: #222; color: #ccc; padding: 25px 20px; text-align: center; font-size: 14px; margin-top: 40px; }
         footer a { color: var(--accent); font-weight: 600; }
@@ -247,17 +280,13 @@
     <main class="container">
         
         <section class="hero">
-            <h1><i class="fas fa-envelope"></i> AI-Powered Job Document Generator</h1>
-            <p>Create perfectly tailored professional documents using advanced AI. Just provide your details and let AI craft the perfect document for you.</p>
-
-              <main class="container">
-    <h1>Create Your Perfect Job Document Instantly</h1>
-    <p>Get your professional Résumé, Cover Letter, or Resignation Letter in seconds. No need for excess typing and editing. Just select, fill, and done.</p>
-
-    <div class="highlight" role="note" aria-live="polite">
-      <strong>💡 Why use this tool?</strong><br />
-      This platform saves you time, anxiety, and awkwardness, providing professionally worded documents without the hassle.
-    </div>
+            <h1><i class="fas fa-envelope"></i> Create Your Perfect Letter Documents Instantly</h1>
+            <p>Create your perfectly tailored professional letter documents in seconds using advanced AI. No need for excess typing and editing. Just select, fill, and done.</p>
+            
+        <div class="highlight" role="note" aria-live="polite">
+        <strong>💡 Why use this tool?</strong><br />
+        This platform saves you time, anxiety, and awkwardness, providing professionally worded documents without the hassle.
+      </div>
 
             <label for="documentType">Select Document Type *</label>
             <select id="documentType" onchange="showForm(this.value)" required>
