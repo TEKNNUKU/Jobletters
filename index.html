@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI-Powered Job Document Generator - Jobletters.xyz</title>
+    <title>✉️ Jobletters.xyz - The Perfect AI-Powered Job Document Generator</title>
     
-    <meta name="description" content="Generate professional, customized job documents (Résumés, Cover Letters, Resignation, Academic) instantly using advanced AI technology.">
+    <meta name="description" content="Generate professional, customized job documents (Résumés, Cover Letters, Resignation, Academic) instantly using advanced AI technology. Create, preview, and download your documents with ease.">
+    <meta property="og:title" content="Jobletters.xyz - Instant Letter Document Generator">
+    <meta property="og:description" content="Create professionally worded job documents in seconds, with PDF export, email delivery, and viral sharing.">
+    <meta property="og:image" content="https://pink-quiet-wolf-922.mypinata.cloud/ipfs/bafkreid764tij2xsbm7qbv3ltxxuyk2eqtd6bxqx76ojhebvlnpzcbq2qi">
+    <meta property="og:url" content="https://jobletters.xyz">
+    <meta name="twitter:card" content="summary_large_image">
 
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0047ab">
@@ -242,8 +247,17 @@
     <main class="container">
         
         <section class="hero">
-            <h1><i class="fas fa-robot"></i> AI-Powered Job Document Generator</h1>
+            <h1><i class="fas fa-envelope"></i> AI-Powered Job Document Generator</h1>
             <p>Create perfectly tailored professional documents using advanced AI. Just provide your details and let AI craft the perfect document for you.</p>
+
+              <main class="container">
+    <h1>Create Your Perfect Job Document Instantly</h1>
+    <p>Get your professional Résumé, Cover Letter, or Resignation Letter in seconds. No need for excess typing and editing. Just select, fill, and done.</p>
+
+    <div class="highlight" role="note" aria-live="polite">
+      <strong>💡 Why use this tool?</strong><br />
+      This platform saves you time, anxiety, and awkwardness, providing professionally worded documents without the hassle.
+    </div>
 
             <label for="documentType">Select Document Type *</label>
             <select id="documentType" onchange="showForm(this.value)" required>
@@ -359,13 +373,28 @@
             </div>
         </section>
         
-    </main>
+        <br/><br/>
+        <h3>Share Your Experience</h3>
+        <div class="social-share" role="group" aria-label="Social media share buttons">
+            <button aria-label="Share on Twitter" onclick="shareSocial('twitter')"><i class="fab fa-twitter"></i></button>
+            <button aria-label="Share on LinkedIn" onclick="shareSocial('linkedin')"><i class="fab fa-linkedin"></i></button>
+            <button aria-label="Share on WhatsApp" onclick="shareSocial('whatsapp')"><i class="fab fa-whatsapp"></i></button>
+            <button aria-label="Share by Email" onclick="shareSocial('email')"><i class="fas fa-envelope"></i></button>
+        </div>
+    </div>
 
-    <footer>
-        <p>&copy; 2025 Jobletters.xyz. All rights reserved.</p>
-        <p>Powered by AI Technology</p>
-    </footer>
+    <div class="highlight" role="region" aria-label="User testimonials">
+      <p><strong>“I needed to resign the same day. This tool saved me.”</strong> – Tunde A., Lagos</p>
+      <p><strong>“I didn’t even know what to say. The letter was perfect.”</strong> – Mercy D., Lagos</p>
+    </div>
+  </main>
 
+  <footer>
+    <p>&copy; 2025 Jobletters.xyz. All rights reserved.</p>
+    <p>Powered by <a href="www.teknnuku.xyz" target="_blank">TEKNNUKU.xyz</a></p>
+  </footer>
+
+    <script id="chatway" async="true" src="https://cdn.chatway.app/widget.js?id=qgzbLK4xw6xO"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
