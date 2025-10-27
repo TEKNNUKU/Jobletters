@@ -91,36 +91,49 @@
             .hamburger { display: block; }
         }
 
-            /* Container */
-    .container {
-      max-width: 700px;
-      background: white;
-      margin: 40px auto 80px;
-      padding: 30px 35px;
-      border-radius: 12px;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.07);
-      transition: box-shadow 0.3s ease;
-    }
-    .container:hover {
-      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-    }
-
         /* Main Content and Forms */
-        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        .container { 
+            max-width: 900px; 
+            margin: 40px auto 80px; 
+            padding: 0 20px; 
+        }
         
-        .hero { background: var(--card-bg); padding: 40px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.07); margin-bottom: 30px; }
-        .hero h1 { font-size: 28px; font-weight: 700; color: var(--primary); margin-top: 0; display: flex; align-items: center; gap: 10px; }
+        .hero { 
+            background: var(--card-bg); 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.07); 
+            margin-bottom: 30px; 
+        }
+        .hero h1 { 
+            font-size: 28px; 
+            font-weight: 700; 
+            color: var(--primary); 
+            margin-top: 0; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+        }
         .hero h1 i { color: var(--accent); }
-
-            h3 {
-      margin-top: 35px;
-      color: #0047ab;
-      user-select: none;
-    }
-    p {
-      line-height: 1.5;
-    }
         
+        h3 {
+            margin-top: 35px;
+            color: #0047ab;
+            user-select: none;
+        }
+        p {
+            line-height: 1.5;
+        }
+
+        .highlight {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            background-color: #e6f3ff;
+            border-left: 5px solid var(--primary);
+            font-size: 0.95em;
+        }
+
         .form-section { background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         
         /* Form Element Styles */
@@ -213,29 +226,29 @@
         .modal.error { background-color: #dc3545; }
         .modal.show { transform: translate(-50%, 0); opacity: 1; }
 
-            /* Social Share buttons */
-    .social-share {
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      margin: 35px 0 0;
-    }
-    
-    .social-share button {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 24px;
-      color: #007bff;
-      transition: color 0.3s ease;
-      user-select: none;
-      width: auto;
-      margin: 0;
-    }
-    
-    .social-share button:hover {
-      color: #0056b3;
-    }
+        /* Social Share buttons */
+        .social-share {
+          display: flex;
+          justify-content: center;
+          gap: 15px;
+          margin: 35px 0 0;
+        }
+        
+        .social-share button {
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 24px;
+          color: #007bff;
+          transition: color 0.3s ease;
+          user-select: none;
+          width: auto;
+          margin: 0;
+        }
+        
+        .social-share button:hover {
+          color: #0056b3;
+        }
 
         /* Footer */
         footer { background-color: #222; color: #ccc; padding: 25px 20px; text-align: center; font-size: 14px; margin-top: 40px; }
@@ -424,27 +437,27 @@
             <button aria-label="Share on WhatsApp" onclick="shareSocial('whatsapp')"><i class="fab fa-whatsapp"></i></button>
             <button aria-label="Share by Email" onclick="shareSocial('email')"><i class="fas fa-envelope"></i></button>
         </div>
-    </div>
+    
+        <div class="highlight" role="region" aria-label="User testimonials">
+          <p><strong>“I needed to resign that same day. This tool saved me.”</strong> – Tunde A., Lagos</p>
+          <p><strong>“I didn’t even know what to say. The letter was perfect.”</strong> – Mercy D., Lagos</p>
+        </div>
+    </main>
 
-    <div class="highlight" role="region" aria-label="User testimonials">
-      <p><strong>“I needed to resign that same day. This tool saved me.”</strong> – Tunde A., Lagos</p>
-      <p><strong>“I didn’t even know what to say. The letter was perfect.”</strong> – Mercy D., Lagos</p>
-    </div>
-  </main>
-
-  <footer>
-    <p>&copy; 2025 Jobletters.xyz. All rights reserved.</p>
-    <p>Powered by <a href="https://teknnuku.xyz" target="_blank">TEKNNUKU.xyz</a></p>
-  </footer>
+    <footer>
+        <p>&copy; 2025 Jobletters.xyz. All rights reserved.</p>
+        <p>Powered by <a href="https://teknnuku.xyz" target="_blank">TEKNNUKU.xyz</a></p>
+    </footer>
 
     <script id="chatway" async="true" src="https://cdn.chatway.app/widget.js?id=qgzbLK4xw6xO"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
         const STORAGE_PREFIX = 'jobletters_';
+        // IMPORTANT: This key is only used locally for mocking the generation check.
         const DEFAULT_MOCK_API_KEY = 'sk-jobletters-default-mock-key'; 
         const FLUTTERWAVE_PAY_LINK = "https://flutterwave.com/pay/uwoq2lwqfocj";
-        const SESSION_PAID_FLAG = 'payment_confirmed'; // NEW: Flag for session persistence
+        const SESSION_PAID_FLAG = 'payment_confirmed'; 
 
         let currentDocumentType = "";
         let generatedDocumentText = "";
@@ -466,28 +479,19 @@
         const navMenu = document.getElementById('navMenu');
         hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
 
-        // --- NEW: Payment Persistence & Firebase Metrics ---
+        // --- Payment Persistence & Firebase Metrics ---
         
-        /**
-         * Checks the sessionStorage flag and unlocks the document if paid.
-         */
         function checkSessionPayment() {
             if (sessionStorage.getItem(SESSION_PAID_FLAG) === 'true') {
-                // UNLOCK the document and update metrics 
-                updatePaidMetrics(); // Update metrics in Firebase/Mock
+                updatePaidMetrics(); 
                 updateDownloadButtons(true);
                 showModal("🎉 Payment confirmed! Your document is unlocked.", false);
-                
-                // Clear the flag after confirming and unlocking to prevent future unlocks
                 sessionStorage.removeItem(SESSION_PAID_FLAG); 
                 return true;
             }
             return false;
         }
 
-        /**
-         * Updates Firestore metrics to track the paid download.
-         */
         async function updatePaidMetrics() {
              const priceText = document.getElementById('currentPrice').textContent.replace('₦', '');
              const numericPrice = parseInt(priceText.replace(/[^\d]/g, '') || '500'); 
@@ -505,7 +509,6 @@
                      console.error("Error updating metrics in Firestore:", error);
                  }
              } else {
-                 // Fallback to local storage mock
                  incrementMetric('income', numericPrice);
                  incrementMetric('downloads');
              }
@@ -556,7 +559,7 @@
          * Initializes the app by fetching settings from Firestore and checking payment status.
          */
         async function initApp() {
-            // FIX 1: Ensure default mock API key is set
+            // FIX 1: Ensure default mock API key is set for mocking/admin panel even if Firestore fails
             if (!localStorage.getItem(STORAGE_PREFIX + 'api_key')) {
                 localStorage.setItem(STORAGE_PREFIX + 'api_key', DEFAULT_MOCK_API_KEY);
             }
@@ -567,7 +570,7 @@
             
             let price = localStorage.getItem(STORAGE_PREFIX + 'price') || '₦500';
             
-            // FIX 2: Fetch price and API key from Firebase (Robustness)
+            // Fetch price and API key from Firebase (Robustness)
             if (window.db && window.firebase) {
                 const { doc, getDoc, setDoc, serverTimestamp } = window.firebase;
                 const configRef = doc(window.db, "settings", "config");
@@ -592,7 +595,6 @@
                     }
                 } catch (error) {
                     console.warn("Network/Firestore error fetching settings. Using fallback key/price.", error);
-                    // showModal("❌ ERROR: Cannot connect to settings. Using local fallback.", true);
                 }
             }
 
@@ -600,7 +602,7 @@
             loadSavedData();
             document.getElementById('letter').oncontextmenu = () => false; 
 
-            // FIX 3: Crucial Check for payment confirmation immediately on page load
+            // Crucial Check for payment confirmation immediately on page load
             checkSessionPayment();
         };
 
@@ -618,7 +620,6 @@
               const formId = docType + 'Form';
               document.getElementById(formId).classList.remove('hidden');
               document.getElementById('generateBtn').classList.remove('hidden');
-              // Only hide preview if not already paid from a previous session
               if (!isPaid) {
                 document.getElementById('preview-section').classList.add('hidden');
               }
@@ -627,7 +628,6 @@
               document.getElementById('preview-section').classList.add('hidden');
           }
           currentDocumentType = docType;
-          // IMPORTANT: Reset payment status ONLY if a new document is selected AND we didn't just return from a payment.
           if (sessionStorage.getItem(SESSION_PAID_FLAG) !== 'true') {
              isPaid = false; 
              updateDownloadButtons(false);
@@ -648,7 +648,7 @@
             }
         }
 
-        // --- Core Generation Logic ---
+        // --- Core Generation Logic (FIXED to ensure mocking works) ---
         async function generateDocument() {
             const btn = document.getElementById('generateBtn');
             btn.disabled = true;
@@ -658,7 +658,7 @@
             document.getElementById('letter').classList.remove('unlocked'); // Lock selection
 
             if (!validateForm(currentDocumentType)) {
-                showModal("⚠️ Please fill in all required fields (*).");
+                showModal("⚠️ Please fill in all required fields (*).", true);
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
                 btn.classList.remove('ai-generating');
@@ -671,19 +671,25 @@
                  saveData(data);
             }
 
+            // --- REVERTED TO CLIENT-SIDE MOCK CHECK ---
+            // This is the simplest way to get generation working client-side.
             const adminKey = localStorage.getItem(STORAGE_PREFIX + 'api_key');
             if (!adminKey || adminKey === '') {
-                 showModal("🔑 System error: AI Key not configured. Cannot generate document.", true);
+                 showModal("🔑 System error: AI Key not configured. Cannot generate document. Use Admin panel to set mock key.", true);
                  btn.disabled = false;
                  btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
                  btn.classList.remove('ai-generating');
                  return;
             }
+            // End Client-side mock check
 
+            // Simulate AI delay
             await new Promise(resolve => setTimeout(resolve, 2000)); 
+            
+            // Mock generation
             const mockGeneratedText = mockAIGenerator(currentDocumentType, data);
             
-            // Update Metrics (Real or Mock)
+            // Update Metrics
             if (window.db && window.firebase) {
                  const { doc, updateDoc, increment } = window.firebase;
                  const configRef = doc(window.db, "settings", "config");
@@ -691,10 +697,10 @@
                      await updateDoc(configRef, { totalGenerations: increment(1) });
                  } catch (e) {
                      console.warn("Could not increment Firestore generation count.");
-                     incrementMetric('generations'); // Fallback
+                     incrementMetric('generations'); 
                  }
             } else {
-                 incrementMetric('generations'); // Fallback
+                 incrementMetric('generations');
             }
 
             // Display Results
@@ -704,7 +710,7 @@
             document.getElementById('preview-section').classList.remove('hidden');
             document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
             
-            isPaid = false; // Always reset to unpaid after a new generation
+            isPaid = false; 
             updateDownloadButtons(false);
 
             btn.disabled = false;
@@ -750,7 +756,7 @@
             }
         }
         
-        // --- Payment Handler (FIXED LOGIC) ---
+        // --- Payment Handler ---
         async function handlePayment() {
             if (generatedDocumentText === "") {
                 showModal("⚠️ Please generate a document first!", true);
@@ -758,39 +764,51 @@
             }
             showModal("💳 Redirecting to Flutterwave for secure payment... Please wait.", false);
             
-            // Clear any old payment flags
             sessionStorage.removeItem(SESSION_PAID_FLAG);
-
-            // Open payment link in a new tab
             window.open(FLUTTERWAVE_PAY_LINK, '_blank', 'noopener,noreferrer');
             
-            // --- ACTUAL FIX: PROMPT USER TO CONFIRM PAYMENT ---
-            // A real app would check a backend webhook here. Since we don't have one, 
-            // we simulate the user returning to this page and confirming.
-            
-            // Wait for 3 seconds to let the user open the window
             await new Promise(resolve => setTimeout(resolve, 3000)); 
 
             const paid = confirm("Did you successfully complete the payment in the new window/tab? Click OK to unlock your document.");
 
             if (paid) {
-                // If user confirms, set the flag and immediately unlock
-                // The next refresh (if it happens) will pick this up in checkSessionPayment()
                 sessionStorage.setItem(SESSION_PAID_FLAG, 'true'); 
-                
-                // Perform the unlock actions immediately
                 updatePaidMetrics(); 
                 updateDownloadButtons(true);
                 showModal("🎉 Payment successful! Your document is now unlocked.", false);
                 document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
-                
             } else {
                 showModal("❌ Payment not confirmed. Document remains locked.", true);
             }
         }
         
+        // --- Social Share Handler (NEW FUNCTION) ---
+        function shareSocial(platform) {
+            const url = encodeURIComponent(window.location.href);
+            const text = encodeURIComponent("I just created a professional document instantly using this AI tool! Check out Jobletters.xyz #AI #JobSearch #Resume");
+            const title = "Jobletters.xyz - AI Document Generator";
+
+            let shareUrl = '';
+
+            if (platform === 'twitter') {
+                shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${text}`;
+            } else if (platform === 'linkedin') {
+                shareUrl = `https://www.linkedin.com/shareArticle?mini=true&url=${url}&title=${title}&summary=${text}&source=`;
+            } else if (platform === 'whatsapp') {
+                shareUrl = `whatsapp://send?text=${text} ${url}`;
+            } else if (platform === 'email') {
+                shareUrl = `mailto:?subject=${title}&body=${text} ${url}`;
+            }
+            
+            if (shareUrl) {
+                window.open(shareUrl, '_blank');
+                showModal(`Sharing via ${platform.charAt(0).toUpperCase() + platform.slice(1)}...`);
+            }
+        }
+
         // --- Core Generator Functions (Unchanged) ---
         function collectFormData(docType) {
+            // ... (remains the same)
             if (docType === 'resume') {
                 return {
                     name: document.getElementById('fullName').value,
@@ -803,7 +821,7 @@
             if (docType === 'coverLetter') {
                 return {
                     name: document.getElementById('cl_fullName').value,
-                    email: document.getElementById('email')?.value || '', // Pulling from Resume Form for consistency
+                    email: document.getElementById('email')?.value || '', 
                     jobTitle: document.getElementById('cl_jobTitle').value,
                     companyName: document.getElementById('cl_companyName').value,
                     experience: document.getElementById('cl_experience').value,
@@ -830,6 +848,7 @@
         }
 
         function mockAIGenerator(docType, data) {
+            // ... (remains the same - provides mock text)
             if (docType === "resume") {
                 return `PROFESSIONAL RÉSUMÉ - AI GENERATED 
 ${'='.repeat(60)}
@@ -928,7 +947,6 @@ ${data.name}`;
         
         // --- Utility Functions ---
         function validateForm(docType) { 
-          // Simplified validation for required fields
           if (docType === "resume") {
                 return document.getElementById('fullName').value && document.getElementById('email').value && document.getElementById('experience').value && document.getElementById('education').value && document.getElementById('skills').value;
             } else if (docType === "coverLetter") {
@@ -956,7 +974,6 @@ ${data.name}`;
             const filename = `${docTypeDisplay.replace(/[^a-zA-Z0-9]/g, '_')}_Generated.pdf`;
 
             doc.setFontSize(12);
-            // Split text to handle line breaks for PDF
             const lines = doc.splitTextToSize(generatedDocumentText, 180);
             doc.text(lines, 10, 10);
             doc.save(filename);
@@ -970,7 +987,6 @@ ${data.name}`;
                  showModal("❌ Please complete payment to print the final document.", true);
                  return;
             }
-            // Uses CSS print media query to hide everything but the letter
             window.print(); 
         }
 
@@ -1011,7 +1027,6 @@ ${data.name}`;
         
         // Admin access cheat code
         document.addEventListener('keydown', (e) => {
-            // Ctrl+Shift+A (or Cmd+Shift+A on Mac) for Admin Login
             if (e.shiftKey && (e.ctrlKey || e.metaKey) && e.key === 'A') {
                 e.preventDefault();
                 const password = prompt("Admin Secret Code:");
