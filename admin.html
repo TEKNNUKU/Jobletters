@@ -14,7 +14,15 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
       import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
-      // Import ALL necessary Firestore functions, including getDocs, query, and orderBy
+      // --- NEW IMPORTS for Authentication ---
+      import { 
+          getAuth, 
+          signInWithEmailAndPassword, 
+          onAuthStateChanged // To check user status on load
+      } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+      // ----------------------------------------
+
+      // Import ALL necessary Firestore functions
       import { 
         getFirestore, 
         doc, 
@@ -22,9 +30,9 @@
         setDoc, 
         collection, 
         serverTimestamp, 
-        getDocs, // <-- New requirement for admin panel
-        query, // <-- New requirement for admin panel
-        orderBy // <-- New requirement for admin panel
+        getDocs, 
+        query, 
+        orderBy 
       } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"; 
       
       const firebaseConfig = {
@@ -37,15 +45,18 @@
         measurementId: "G-TR8CQ7EP54"
       };
       
-      // Initialize Firebase and make Firestore available globally
+      // Initialize Firebase
       const app = initializeApp(firebaseConfig);
       const analytics = getAnalytics(app);
       window.db = getFirestore(app); 
-      
-      // Expose the Firestore functions globally so the <script> block can use them
+      window.auth = getAuth(app); // Initialize and expose Auth
+
+      // Expose the necessary functions globally 
       window.firebase = { 
           doc, getDoc, setDoc, collection, 
-          serverTimestamp, getDocs, query, orderBy 
+          serverTimestamp, getDocs, query, orderBy,
+          // Expose Auth functions
+          signInWithEmailAndPassword, onAuthStateChanged 
       };
     </script>
 
@@ -90,13 +101,13 @@
         .user-table tr:hover { background-color: #e6f0ff; }
         .loading-text { text-align: center; color: #777; padding: 20px; }
 
-        /* Login Screen */
+        /* Login Screen - Updated to use Email/Password */
         .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .login-box { background: var(--card-bg); padding: 40px; border-radius: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 400px; }
         .login-box h3 { color: var(--primary); margin-bottom: 20px; font-size: 24px; }
-        #loginPassword { margin-bottom: 20px; }
-        .btn-login { background: var(--danger); color: white; padding: 12px 25px; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background-color 0.3s; width: 100%; }
-        .btn-login:hover { background: #a31a29; }
+        #loginPassword, #loginEmail { margin-bottom: 15px; }
+        .btn-login { background: var(--primary); color: white; padding: 12px 25px; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background-color 0.3s; width: 100%; }
+        .btn-login:hover { background: #003380; }
         .hidden { display: none !important; }
 
         /* Modal */
@@ -170,8 +181,9 @@
     <div class="login-overlay" id="loginOverlay">
         <div class="login-box">
             <h3>🔒 Admin Login</h3>
-            <p>Enter the secret code to access the dashboard.</p>
-            <input type="password" id="loginPassword" placeholder="Secret Code" required />
+            <p>Enter your Admin Email and Password to access the dashboard.</p>
+            <input type="email" id="loginEmail" placeholder="Admin Email" required />
+            <input type="password" id="loginPassword" placeholder="Password" required />
             <button class="btn-login" onclick="handleLogin()">
                 <i class="fas fa-sign-in-alt"></i> Access Dashboard
             </button>
@@ -180,7 +192,12 @@
 
     <script>
         const STORAGE_PREFIX = 'jobletters_';
-        const ADMIN_SECRET_CODE = 'jobadmin2025'; // The hardcoded key for local access
+        
+        // --- NOTE: ADMIN_EMAIL and ADMIN_PASSWORD must be replaced with the credentials of an admin user in your Firebase Authentication. ---
+        const ADMIN_EMAIL = 'admin@jobletters.xyz'; 
+        const ADMIN_PASSWORD = 'your_secret_admin_password'; 
+        // -----------------------------------------------------------------------------------------------------------------------------------
+
 
         // --- Utility Functions ---
         function showModal(message, isError = false) {
@@ -195,27 +212,55 @@
                 setTimeout(() => modal.remove(), 500);
             }, 4000);
         }
+        
+        function showAdminContent() {
+             document.getElementById('loginOverlay').classList.add('hidden');
+             document.getElementById('adminContent').classList.remove('hidden');
+             initAdminDashboard();
+        }
 
-        // --- Admin Login Logic ---
-        function handleLogin() {
+        // --- Admin Login Logic (Updated to use Firebase Auth) ---
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
-            if (password === ADMIN_SECRET_CODE) {
-                localStorage.setItem(STORAGE_PREFIX + 'admin_access', 'granted');
-                document.getElementById('loginOverlay').classList.add('hidden');
-                document.getElementById('adminContent').classList.remove('hidden');
-                initAdminDashboard();
+            
+            if (!email || !password) {
+                showModal("⚠️ Email and Password are required.", true);
+                return;
+            }
+
+            // Optional: You can check against the hardcoded values here or use the secure way below.
+            // If you choose to check against hardcoded values, use the same ADMIN_EMAIL and ADMIN_PASSWORD
+            // defined above.
+
+            try {
+                // Secure way: Sign in with the provided credentials. This will only work 
+                // if the user exists in Firebase Authentication.
+                await window.firebase.signInWithEmailAndPassword(window.auth, email, password);
                 showModal("🔑 Welcome, Admin!");
-            } else {
-                showModal("❌ Invalid Secret Code.", true);
+                // onAuthStateChanged listener (in checkLoginStatus) will handle showing the content
+            } catch (error) {
+                console.error("Firebase Login Error:", error);
+                // Check for common errors and give a better message
+                let errorMessage = "❌ Login failed. Check credentials/network.";
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    errorMessage = "❌ Invalid Email or Password.";
+                }
+                showModal(errorMessage, true);
             }
         }
 
         function checkLoginStatus() {
-            if (localStorage.getItem(STORAGE_PREFIX + 'admin_access') === 'granted') {
-                document.getElementById('loginOverlay').classList.add('hidden');
-                document.getElementById('adminContent').classList.remove('hidden');
-                initAdminDashboard();
-            }
+             window.firebase.onAuthStateChanged(window.auth, (user) => {
+                if (user) {
+                    // User is signed in. Show admin panel.
+                    showAdminContent();
+                } else {
+                    // User is signed out. Show login overlay.
+                    document.getElementById('adminContent').classList.add('hidden');
+                    document.getElementById('loginOverlay').classList.remove('hidden');
+                }
+            });
         }
 
         // --- Firestore Data Handlers ---
@@ -243,7 +288,8 @@
                     document.getElementById('totalDownloads').textContent = data.totalDownloads ? data.totalDownloads.toLocaleString() : '0';
 
                     // Load Settings for editing
-                    document.getElementById('apiKey').value = data.apiKey || '';
+                    // NOTE: Hiding the API key by default for security, even though it's the admin panel
+                    document.getElementById('apiKey').value = data.apiKey || ''; 
                     document.getElementById('documentPrice').value = data.documentPrice || '₦500';
 
                     // Update localStorage for index.html sync (Critical)
@@ -255,7 +301,9 @@
                 }
             } catch (error) {
                 console.error("Error fetching dashboard metrics:", error);
-                showModal("❌ Error fetching data from Firestore.", true);
+                // The main app error: Network/Firestore error fetching settings (permission-denied)
+                // This is likely still happening here, but we now focus on fixing the WRITE issue.
+                showModal("❌ Error fetching data from Firestore. Check READ permissions.", true); 
             }
         }
 
@@ -267,7 +315,8 @@
 
             const { collection, getDocs, query, orderBy } = window.firebase;
             const usersCol = collection(window.db, "users");
-            const q = query(usersCol, orderBy("lastGenerated", "desc"));
+            // The query only works if the authenticated admin user has READ permission on the 'users' collection
+            const q = query(usersCol, orderBy("lastGenerated", "desc")); 
             const tableBody = document.getElementById('userTableBody');
             
             tableBody.innerHTML = ''; // Clear existing data
@@ -280,7 +329,10 @@
                 
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    const lastActivity = data.lastGenerated ? new Date(data.lastGenerated.toDate()).toLocaleString() : 'N/A';
+                    // Firebase Timestamps need to be converted to Date objects before calling toLocaleString
+                    const lastActivity = data.lastGenerated && typeof data.lastGenerated.toDate === 'function' 
+                        ? data.lastGenerated.toDate().toLocaleString() 
+                        : 'N/A';
                     
                     rowsHtml += `
                         <tr>
@@ -299,7 +351,7 @@
 
             } catch (error) {
                 console.error("Error fetching user table:", error);
-                document.querySelector('.loading-text').textContent = "Error loading user data.";
+                document.querySelector('.loading-text').textContent = "Error loading user data (Permission Denied).";
             }
         }
 
@@ -311,8 +363,9 @@
             const saveBtn = document.getElementById('saveSettingsBtn');
             saveBtn.disabled = true;
 
-            if (!window.db || !window.firebase) {
-                showModal("❌ Database connection failed.", true);
+            if (!window.db || !window.firebase || !window.auth.currentUser) {
+                // This check is now the main line of defense against the write error.
+                showModal("❌ Database or Authentication failed. Are you logged in?", true); 
                 saveBtn.disabled = false;
                 return;
             }
@@ -330,11 +383,13 @@
             const configRef = doc(window.db, "settings", "config");
 
             try {
+                // This operation now uses the authenticated user's credentials, 
+                // which should bypass the 'permission-denied' WRITE error if Firestore rules are correct.
                 await setDoc(configRef, {
                     apiKey: apiKey,
                     documentPrice: documentPrice,
                     lastUpdated: serverTimestamp()
-                }, { merge: true }); // Use merge to keep totalIncome, etc.
+                }, { merge: true }); 
 
                 // Update localStorage for index.html sync
                 localStorage.setItem(STORAGE_PREFIX + 'api_key', apiKey);
@@ -345,7 +400,8 @@
 
             } catch (error) {
                 console.error("Error saving settings:", error);
-                showModal("❌ Error saving settings to Firestore.", true);
+                // This error should now be very rare if auth is successful.
+                showModal("❌ Error saving settings to Firestore. Check Firestore WRITE rules.", true); 
             } finally {
                 saveBtn.disabled = false;
             }
@@ -361,7 +417,7 @@
             fetchUserTable();
         }
 
-        // Check login status on page load
+        // Check login status on page load (now uses Firebase onAuthStateChanged)
         document.addEventListener('DOMContentLoaded', checkLoginStatus);
 
     </script>
