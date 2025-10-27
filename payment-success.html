@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Verification</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Montserrat', sans-serif; text-align: center; padding: 50px; background-color: #f7f9fc; }
+        .spinner { border: 8px solid #f3f3f3; border-top: 8px solid #0047ab; border-radius: 50%; width: 60px; height: 60px; animation: spin 2s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .message { color: #333; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <div class="spinner"></div>
+    <p class="message">Verifying your payment... Do not close this window.</p>
+    <p id="details"></p>
+
+    <script type="module">
+        // NOTE: Add your Firebase config here again, or include the script tag from index.html
+        // For simplicity, we assume window.db and window.firebase are available via a script tag.
+        
+        // Mock Firebase config for this example (replace with real one)
+        const firebaseConfig = { /* ... your config ... */ }; 
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"; 
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app); 
+        
+        const STORAGE_PREFIX = 'jobletters_';
+        const SESSION_PAID_FLAG = 'payment_confirmed'; 
+
+        function getUrlParams() {
+            const params = {};
+            window.location.search.substring(1).split('&').forEach(pair => {
+                if (pair) {
+                    const [key, value] = pair.split('=');
+                    params[key] = decodeURIComponent(value.replace(/\+/g, ' '));
+                }
+            });
+            return params;
+        }
+
+        async function verifyPayment() {
+            const params = getUrlParams();
+            const tx_ref = params.tx_ref; 
+            const status = params.status;
+            const docId = localStorage.getItem(STORAGE_PREFIX + 'pendingDocId');
+            
+            document.getElementById('details').textContent = `Transaction: ${tx_ref || 'N/A'}`;
+
+            // 1. Basic check
+            if (status !== 'successful' || !tx_ref || !docId) {
+                console.error("Missing/Failed transaction details.");
+                alert("Payment failed or details are missing. Please try again.");
+                window.location.href = "/index.html"; // Redirect home
+                return;
+            }
+
+            // 2. Mock Server-Side Verification (Since this is client-side JS)
+            // IN A REAL APP: You MUST send tx_ref to a secure backend endpoint (Firebase Function) 
+            // to verify with Flutterwave's API KEY, not client-side.
+            
+            // For now, we simulate success and update the document in Firestore
+            try {
+                const docRef = doc(db, "documents", docId);
+                await updateDoc(docRef, {
+                    isPaid: true,
+                    txRef: tx_ref,
+                    paidAt: serverTimestamp(),
+                    status: 'verified_success'
+                });
+                
+                // 3. Set a session flag and redirect back to the main app with the docId
+                // The main app will fetch and display the unlocked document based on this ID.
+                sessionStorage.setItem(SESSION_PAID_FLAG, docId);
+                localStorage.removeItem(STORAGE_PREFIX + 'pendingDocId'); // Clean up
+
+                alert("Payment verified successfully! Redirecting to your document.");
+                window.location.href = `/index.html?docId=${docId}`;
+
+            } catch (e) {
+                console.error("Error updating Firestore or docId missing:", e);
+                alert("Error verifying payment with the system. Please contact support with Transaction ID: " + tx_ref);
+                window.location.href = "/index.html";
+            }
+        }
+
+        window.addEventListener('load', verifyPayment);
+    </script>
+</body>
+</html>
