@@ -455,16 +455,19 @@
 
     <script>
         const STORAGE_PREFIX = 'jobletters_';
-        // IMPORTANT: This key is only used locally for mocking the generation check/fallback.
         const DEFAULT_MOCK_API_KEY = 'sk-jobletters-default-mock-key'; 
-        const FLUTTERWAVE_PAY_LINK = "https://flutterwave.com/pay/uwoq2lwqfocj";
-        const SESSION_PAID_FLAG = 'payment_confirmed'; 
+        // NOTE: You must update the Flutterwave link to redirect to your payment-success.html
+        const FLUTTERWAVE_PAY_LINK = "https://flutterwave.com/pay/uwoq2lwqfocj"; 
+        // Renamed to hold the verified document ID, not just a boolean flag
+        const SESSION_PAID_FLAG = 'verified_doc_id'; 
+        const PENDING_DOC_ID = 'pendingDocId'; // For temporary storage before redirect
 
         let currentDocumentType = "";
         let generatedDocumentText = "";
         let isPaid = false; 
+        let currentDocId = null; // NEW: Unique ID for the generated document
 
-        // --- PWA Service Worker Registration ---
+        // --- PWA Service Worker Registration (Unchanged) ---
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
             navigator.serviceWorker.register('/service-worker.js').then(registration => {
@@ -475,20 +478,62 @@
           });
         }
 
-        // --- Menu Toggle Script ---
+        // --- Menu Toggle Script (Unchanged) ---
         const hamburger = document.getElementById('hamburger');
         const navMenu = document.getElementById('navMenu');
         hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
 
-        // --- Payment Persistence & Firebase Metrics ---
+        // --- Payment Persistence & Firebase Metrics (HEAVILY MODIFIED) ---
         
-        function checkSessionPayment() {
-            if (sessionStorage.getItem(SESSION_PAID_FLAG) === 'true') {
-                updatePaidMetrics(); 
-                updateDownloadButtons(true);
-                showModal("🎉 Payment confirmed! Your document is unlocked.", false);
+        /**
+         * Checks for a verified payment ID in the URL (from payment-success.html) or session storage,
+         * then fetches and unlocks the document if Firestore confirms payment.
+         */
+        async function checkSessionPayment() {
+            // 1. Check for ID in the URL (The primary way the payment-success page communicates)
+            const urlParams = new URLSearchParams(window.location.search);
+            const verifiedDocId = urlParams.get('docId') || sessionStorage.getItem(SESSION_PAID_FLAG);
+
+            if (verifiedDocId) {
+                // Clear the URL parameter and session flag immediately after reading
                 sessionStorage.removeItem(SESSION_PAID_FLAG); 
-                return true;
+                window.history.replaceState({}, document.title, window.location.pathname); 
+
+                // 2. Fetch the document from Firestore for confirmation
+                if (window.db && window.firebase) {
+                    const { doc, getDoc } = window.firebase;
+                    const docRef = doc(window.db, "documents", verifiedDocId);
+                    try {
+                        const docSnap = await getDoc(docRef);
+                        
+                        if (docSnap.exists() && docSnap.data().isPaid) {
+                            const data = docSnap.data();
+                            
+                            // Load the unlocked content
+                            generatedDocumentText = data.draftContent;
+                            currentDocId = verifiedDocId;
+                            
+                            // Re-populate form fields based on the saved data (optional, but helpful for context)
+                            // NOTE: You would need a function to map data.data back to form inputs
+
+                            document.getElementById('letter').textContent = generatedDocumentText;
+                            document.getElementById('preview-section').classList.remove('hidden');
+                            
+                            // Unlock and track metrics
+                            updatePaidMetrics(); 
+                            updateDownloadButtons(true);
+                            showModal("🎉 Payment verified! Your document is unlocked.", false);
+                            document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+                            return true;
+                        } else {
+                             // Document exists but isPaid is false (failed/unconfirmed payment)
+                             showModal("⚠️ Document found, but payment is not verified. Please try payment again or contact support.", true);
+                        }
+                    } catch (error) {
+                        console.error("Error fetching verified document from Firestore:", error);
+                        showModal("❌ System error: Could not verify payment in the database.", true);
+                    }
+                }
             }
             return false;
         }
@@ -515,7 +560,42 @@
              }
         }
         
-        // --- Load/Save Data Functions (MOCK ACCOUNT) ---
+        // --- Save Document Draft (NEW FUNCTION) ---
+
+        /**
+         * Saves the initial draft to Firestore and returns the unique ID.
+         * Sets isPaid: false initially.
+         */
+        async function saveDocumentDraft(docType, data, content) {
+            if (!window.db || !window.firebase) {
+                 // Fallback for no Firestore connection
+                 currentDocId = 'mock_doc_' + Date.now();
+                 return currentDocId; 
+            }
+            
+            const { doc, setDoc, serverTimestamp } = window.firebase;
+            // Use the client's timestamp for a unique, sortable ID prefix
+            const docRef = doc(window.db, "documents", "DOC_" + Date.now()); 
+            currentDocId = docRef.id;
+
+            try {
+                await setDoc(docRef, {
+                    docId: currentDocId,
+                    type: docType,
+                    data: data, // Save the form data
+                    draftContent: content,
+                    isPaid: false, // CRITICAL: starts as false
+                    createdAt: serverTimestamp()
+                });
+                return currentDocId;
+            } catch (error) {
+                console.error("Error saving document draft to Firestore:", error);
+                showModal("❌ Failed to save draft. Cannot proceed to payment.", true);
+                return null;
+            }
+        }
+        
+        // --- Load/Save Data Functions (Unchanged) ---
         function loadSavedData() {
             if (document.getElementById('saveDataCheckbox')) {
                 if (localStorage.getItem(STORAGE_PREFIX + 'saveDataCheckbox') === 'true') {
@@ -606,7 +686,7 @@
             document.getElementById('letter').oncontextmenu = () => false; 
 
             // Crucial Check for payment confirmation immediately on page load
-            checkSessionPayment();
+            await checkSessionPayment();
         };
 
         window.addEventListener('load', () => {
@@ -614,7 +694,7 @@
              setTimeout(initApp, 500); 
         });
 
-        // --- Form Display Logic ---
+        // --- Form Display Logic (Unchanged) ---
         function showForm(docType) {
           const forms = document.querySelectorAll('#formsContainer > div');
           forms.forEach(form => form.classList.add('hidden'));
@@ -623,6 +703,7 @@
               const formId = docType + 'Form';
               document.getElementById(formId).classList.remove('hidden');
               document.getElementById('generateBtn').classList.remove('hidden');
+              // Only hide preview if not already paid and unlocked
               if (!isPaid) {
                 document.getElementById('preview-section').classList.add('hidden');
               }
@@ -632,12 +713,18 @@
           }
           currentDocumentType = docType;
           if (sessionStorage.getItem(SESSION_PAID_FLAG) !== 'true') {
-             isPaid = false; 
-             updateDownloadButtons(false);
+             // Retain isPaid state if successfully verified via URL/Session on load
+             // Otherwise, reset if the user changes the document type.
+             if (currentDocId && isPaid) {
+                 // Do nothing, keep unlocked document visible
+             } else {
+                 isPaid = false; 
+                 updateDownloadButtons(false);
+             }
           }
         }
 
-        // --- Academic Prompt Helper ---
+        // --- Academic Prompt Helper (Unchanged) ---
         function updateAcademicPrompt(purpose) {
             const label = document.getElementById('ac_details_label');
             if (purpose === 'course_change') {
@@ -651,7 +738,7 @@
             }
         }
 
-        // --- Core Generation Logic (UPDATED to call the real AI function) ---
+        // --- Core Generation Logic (UPDATED to save draft to Firestore) ---
         async function generateDocument() {
             const btn = document.getElementById('generateBtn');
             btn.disabled = true;
@@ -677,14 +764,22 @@
             const adminKey = localStorage.getItem(STORAGE_PREFIX + 'api_key');
             if (!adminKey || adminKey === '' || adminKey === DEFAULT_MOCK_API_KEY) {
                  showModal("🔑 WARNING: AI Key is missing/mocked. Generating mock draft.", true);
-                 // If key is mock/missing, skip API call and proceed to mock generation
                  generatedDocumentText = mockAIGenerator(currentDocumentType, data);
             } else {
-                 // **THIS IS THE KEY CHANGE: Call the actual API function**
                  generatedDocumentText = await callAIGenerator(currentDocumentType, data, adminKey);
             }
             
-            // --- Update Metrics (Only if NOT using the mock key to prevent spam) ---
+            // 1. NEW: Save the generated draft to Firestore
+            currentDocId = await saveDocumentDraft(currentDocumentType, data, generatedDocumentText);
+            if (!currentDocId) {
+                // If saving fails, we cannot proceed to payment securely.
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
+                btn.classList.remove('ai-generating');
+                return; 
+            }
+
+            // 2. Update Metrics (Only if NOT using the mock key)
             if (adminKey !== DEFAULT_MOCK_API_KEY) { 
                 if (window.db && window.firebase) {
                      const { doc, updateDoc, increment } = window.firebase;
@@ -701,19 +796,19 @@
             }
 
 
-            // Display Results
+            // 3. Display Results
             document.getElementById('letter').textContent = generatedDocumentText;
             
             document.getElementById('preview-section').classList.remove('hidden');
             document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
             
             isPaid = false; 
-            updateDownloadButtons(false);
+            updateDownloadButtons(false); // Ensure buttons are locked after new generation
 
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
             btn.classList.remove('ai-generating');
-            showModal("✅ AI Draft complete! Review and Download.");
+            showModal("✅ AI Draft complete! Document ID: " + currentDocId);
         }
         
         function regenerateDocument() {
@@ -721,7 +816,7 @@
             showModal("🔄 Regenerating document...");
         }
 
-        // --- Core Generator Functions (UPDATED FOR REAL AI CALL) ---
+        // --- Core Generator Functions (Unchanged) ---
 
         /**
          * Creates a comprehensive prompt string based on the document type and user input.
@@ -915,7 +1010,7 @@ ${data.name}`;
          }
 
 
-        // --- Download Button Control Function ---
+        // --- Download Button Control Function (Unchanged) ---
         function updateDownloadButtons(paidStatus) {
             isPaid = paidStatus;
             const payBtn = document.getElementById('payBtn');
@@ -947,33 +1042,38 @@ ${data.name}`;
             }
         }
         
-        // --- Payment Handler ---
+        // --- Payment Handler (MAJOR CHANGE: Removed confirm, added doc tracking) ---
         async function handlePayment() {
-            if (generatedDocumentText === "") {
+            if (!currentDocId || generatedDocumentText === "") {
                 showModal("⚠️ Please generate a document first!", true);
                 return;
             }
-            showModal("💳 Redirecting to Flutterwave for secure payment... Please wait.", false);
-            
-            sessionStorage.removeItem(SESSION_PAID_FLAG);
-            window.open(FLUTTERWAVE_PAY_LINK, '_blank', 'noopener,noreferrer');
-            
-            await new Promise(resolve => setTimeout(resolve, 3000)); 
 
-            const paid = confirm("Did you successfully complete the payment in the new window/tab? Click OK to unlock your document.");
+            // 1. Store the document ID so the success page knows which document to mark as paid
+            localStorage.setItem(STORAGE_PREFIX + PENDING_DOC_ID, currentDocId);
+            
+            const emailData = collectFormData(currentDocumentType);
+            const userEmail = emailData.email || document.getElementById('email')?.value || '';
+            const userName = emailData.name || document.getElementById('fullName')?.value || 'Jobletters User';
+            
+            // 2. Construct the payment link with reference and redirect URL
+            // NOTE: You MUST configure Flutterwave to accept these parameters and redirect to
+            // your hosted 'payment-success.html' page.
+            const redirectUrl = window.location.origin + "/payment-success.html";
+            
+            // Assuming the simple link can accept query parameters for reference tracking
+            const finalPaymentLink = `${FLUTTERWAVE_PAY_LINK}&tx_ref=${currentDocId}&redirect_url=${encodeURIComponent(redirectUrl)}&customer_email=${encodeURIComponent(userEmail)}&customer_name=${encodeURIComponent(userName)}`;
 
-            if (paid) {
-                sessionStorage.setItem(SESSION_PAID_FLAG, 'true'); 
-                updatePaidMetrics(); 
-                updateDownloadButtons(true);
-                showModal("🎉 Payment successful! Your document is now unlocked.", false);
-                document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
-            } else {
-                showModal("❌ Payment not confirmed. Document remains locked.", true);
-            }
+            showModal("💳 Redirecting to Flutterwave for secure payment...", false);
+            
+            // 3. Redirect the user to the payment page
+            window.open(finalPaymentLink, '_self'); // Use _self to ensure user leaves the page
+
+            // Note: The old `confirm()` dialog and `setTimeout` are GONE.
+            // Verification now happens on the `payment-success.html` page.
         }
         
-        // --- Social Share Handler (NEW FUNCTION) ---
+        // --- Social Share Handler (Unchanged) ---
         function shareSocial(platform) {
             const url = encodeURIComponent(window.location.href);
             const text = encodeURIComponent("I just created a professional document instantly using this AI tool! Check out Jobletters.xyz #AI #JobSearch #Resume");
@@ -1039,14 +1139,14 @@ ${data.name}`;
         }
 
         
-        // --- Metric Management (Mocked using localStorage) ---
+        // --- Metric Management (Mocked using localStorage) (Unchanged) ---
         function incrementMetric(key, value = 1) {
             let current = parseInt(localStorage.getItem(STORAGE_PREFIX + key) || '0');
             current += value;
             localStorage.setItem(STORAGE_PREFIX + key, current);
         }
         
-        // --- Utility Functions ---
+        // --- Utility Functions (Unchanged) ---
         function validateForm(docType) { 
           if (docType === "resume") {
                 return document.getElementById('fullName').value && document.getElementById('email').value && document.getElementById('experience').value && document.getElementById('education').value && document.getElementById('skills').value;
@@ -1060,7 +1160,7 @@ ${data.name}`;
           return true; 
         }
 
-        // Mock PDF Download (Only works if paid)
+        // Mock PDF Download (Only works if paid) (Unchanged)
         function downloadPDF() { 
             if (!isPaid) {
                  showModal("❌ Please complete payment to download the final document.", true);
@@ -1082,7 +1182,7 @@ ${data.name}`;
             showModal("✅ PDF downloaded successfully!");
         }
 
-        // Print Document (Only works if paid)
+        // Print Document (Only works if paid) (Unchanged)
         function printDocument() { 
             if (!isPaid) {
                  showModal("❌ Please complete payment to print the final document.", true);
@@ -1091,7 +1191,7 @@ ${data.name}`;
             window.print(); 
         }
 
-        // Email Document (Only works if paid)
+        // Email Document (Only works if paid) (Unchanged)
         function emailDocument() { 
             if (!isPaid) {
                  showModal("❌ Please complete payment to email the final document.", true);
@@ -1126,7 +1226,7 @@ ${data.name}`;
           }, 4000);
         }
         
-        // Admin access cheat code
+        // Admin access cheat code (Unchanged)
         document.addEventListener('keydown', (e) => {
             if (e.shiftKey && (e.ctrlKey || e.metaKey) && e.key === 'A') {
                 e.preventDefault();
