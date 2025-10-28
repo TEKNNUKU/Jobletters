@@ -16,7 +16,7 @@
     <meta name="theme-color" content="#0047ab">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;500;600&display=swap" rel="stylesheet" />
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
@@ -456,16 +456,17 @@
     <script>
         const STORAGE_PREFIX = 'jobletters_';
         const DEFAULT_MOCK_API_KEY = 'sk-jobletters-default-mock-key'; 
-        // NOTE: You must update the Flutterwave link to redirect to your payment-success.html
-        const FLUTTERWAVE_PAY_LINK = "https://flutterwave.com/pay/uwoq2lwqfocj"; 
-        // Renamed to hold the verified document ID, not just a boolean flag
+        // NOTE: This is the KEY provided by the user.
+        const FLUTTERWAVE_PUBLIC_KEY = "FLWPUBK-05bb86af711fd1998eb529cb0bc4e0f4-X"; 
+        
+        // These constants are used to track the payment flow
         const SESSION_PAID_FLAG = 'verified_doc_id'; 
-        const PENDING_DOC_ID = 'pendingDocId'; // For temporary storage before redirect
+        const PENDING_DOC_ID = 'pendingDocId'; 
 
         let currentDocumentType = "";
         let generatedDocumentText = "";
         let isPaid = false; 
-        let currentDocId = null; // NEW: Unique ID for the generated document
+        let currentDocId = null; 
 
         // --- PWA Service Worker Registration (Unchanged) ---
         if ('serviceWorker' in navigator) {
@@ -483,10 +484,10 @@
         const navMenu = document.getElementById('navMenu');
         hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
 
-        // --- Payment Persistence & Firebase Metrics (HEAVILY MODIFIED) ---
+        // --- Payment Persistence & Firebase Metrics (UPDATED) ---
         
         /**
-         * Checks for a verified payment ID in the URL (from payment-success.html) or session storage,
+         * Checks for a verified payment ID in the URL or session storage,
          * then fetches and unlocks the document if Firestore confirms payment.
          */
         async function checkSessionPayment() {
@@ -512,9 +513,9 @@
                             // Load the unlocked content
                             generatedDocumentText = data.draftContent;
                             currentDocId = verifiedDocId;
+                            currentDocumentType = data.type; // Load document type for PDF naming
                             
-                            // Re-populate form fields based on the saved data (optional, but helpful for context)
-                            // NOTE: You would need a function to map data.data back to form inputs
+                            // Note: We don't re-populate form fields, just display the unlocked letter.
 
                             document.getElementById('letter').textContent = generatedDocumentText;
                             document.getElementById('preview-section').classList.remove('hidden');
@@ -544,6 +545,7 @@
                      
              if (window.db && window.firebase) {
                  const { doc, updateDoc, increment, serverTimestamp } = window.firebase;
+                 // Note: totalDownloads is incremented here, totalGenerations in generateDocument
                  const configRef = doc(window.db, "settings", "config");
                  try {
                      await updateDoc(configRef, {
@@ -553,6 +555,9 @@
                      });
                  } catch (error) {
                      console.error("Error updating payment metrics in Firestore:", error);
+                     // Fallback metric update only if Firestore fails
+                     incrementMetric('income', numericPrice);
+                     incrementMetric('downloads');
                  }
              } else {
                  incrementMetric('income', numericPrice);
@@ -560,15 +565,13 @@
              }
         }
         
-        // --- Save Document Draft (NEW FUNCTION) ---
+        // --- Save Document Draft ---
 
         /**
          * Saves the initial draft to Firestore and returns the unique ID.
-         * Sets isPaid: false initially.
          */
         async function saveDocumentDraft(docType, data, content) {
             if (!window.db || !window.firebase) {
-                 // Fallback for no Firestore connection
                  currentDocId = 'mock_doc_' + Date.now();
                  return currentDocId; 
             }
@@ -676,7 +679,6 @@
                         });
                     }
                 } catch (error) {
-                    // This is the CRITICAL 'permission-denied' READ error we are trying to fix with rules
                     console.warn("Network/Firestore error fetching settings. Using fallback key/price.", error);
                 }
             }
@@ -712,15 +714,11 @@
               document.getElementById('preview-section').classList.add('hidden');
           }
           currentDocumentType = docType;
-          if (sessionStorage.getItem(SESSION_PAID_FLAG) !== 'true') {
-             // Retain isPaid state if successfully verified via URL/Session on load
-             // Otherwise, reset if the user changes the document type.
-             if (currentDocId && isPaid) {
-                 // Do nothing, keep unlocked document visible
-             } else {
-                 isPaid = false; 
-                 updateDownloadButtons(false);
-             }
+          
+          // Reset isPaid state if the user selects a new document type
+          if (currentDocId && isPaid && currentDocumentType !== (document.getElementById('documentType').value || '')) {
+             isPaid = false; 
+             updateDownloadButtons(false);
           }
         }
 
@@ -738,7 +736,7 @@
             }
         }
 
-        // --- Core Generation Logic (UPDATED to save draft to Firestore) ---
+        // --- Core Generation Logic (UPDATED AI MODEL) ---
         async function generateDocument() {
             const btn = document.getElementById('generateBtn');
             btn.disabled = true;
@@ -787,7 +785,7 @@
                      try {
                          await updateDoc(configRef, { totalGenerations: increment(1) });
                      } catch (e) {
-                         console.warn("Could not increment Firestore generation count (Permission Denied likely).");
+                         console.warn("Could not increment Firestore generation count (Permission Denied likely).", e);
                          incrementMetric('generations'); // Fallback to localStorage
                      }
                 } else {
@@ -816,16 +814,18 @@
             showModal("🔄 Regenerating document...");
         }
 
-        // --- Core Generator Functions (Unchanged) ---
+        // --- Core Generator Functions (UPDATED) ---
 
         /**
-         * Creates a comprehensive prompt string based on the document type and user input.
+         * Creates a list of message objects for the Chat Completions API.
          */
         function createAIPrompt(docType, data) {
             const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-            
+            let systemPrompt = "You are an expert professional document and letter writer, specializing in creating formal, clear, and highly effective job and academic documents. Your output must be in plain text, ready to be copied into an email or document.";
+            let userPrompt = "";
+
             if (docType === "resume") {
-                return `Create a highly professional and modern résumé/CV tailored for an Applicant Tracking System (ATS). Use the following candidate data, focusing on quantifiable achievements and impact. Format it professionally for a plain text output with clear headings.
+                userPrompt = `Create a highly professional and modern résumé/CV tailored for an Applicant Tracking System (ATS). Use the following candidate data, focusing on quantifiable achievements and impact. Format it professionally for a plain text output with clear headings.
 Name: ${data.name}
 Email: ${data.email}
 Experience Summary: ${data.experience}
@@ -834,11 +834,11 @@ Key Skills (use bullet points): ${data.skills}`;
             }
 
             if (docType === "coverLetter") {
-                return `Write a formal and compelling job application cover letter. The applicant is ${data.name}. The target role is ${data.jobTitle} at ${data.companyName}. Emphasize the following specific achievements to show fit: ${data.experience}. The letter must be professional, brief, and highly persuasive. Include a placeholder for the manager's name.`;
+                userPrompt = `Write a formal and compelling job application cover letter. The applicant is ${data.name}. The target role is ${data.jobTitle} at ${data.companyName}. Emphasize the following specific achievements to show fit: ${data.experience}. The letter must be professional, brief, and highly persuasive. Include a placeholder for the manager's name (e.g., [Hiring Manager Name]).`;
             }
 
             if (docType === "resignation") {
-                return `Write a formal and polite resignation letter. The employee is ${data.name}, resigning from the position of ${data.position}. The intended last day of employment is ${data.lastDay}. The stated reason for resignation is: ${data.reason || 'to pursue other career opportunities'}. Ensure it is professional and offers a smooth transition. Include a placeholder for the manager's name.`;
+                userPrompt = `Write a formal and polite resignation letter. The employee is ${data.name}, resigning from the position of ${data.position}. The intended last day of employment is ${data.lastDay}. The stated reason for resignation is: ${data.reason || 'to pursue other career opportunities'}. Ensure it is professional and offers a smooth transition. Include a placeholder for the manager's name (e.g., [Manager Name]).`;
             }
             
             if (docType === "academic") {
@@ -851,7 +851,7 @@ Key Skills (use bullet points): ${data.skills}`;
                  const recipientAddress = recipientMap[data.recipient];
                  const purposeTitle = data.purpose.replace(/_/g, ' ').toUpperCase();
 
-                 return `Write a formal academic letter for a student.
+                 userPrompt = `Write a formal academic letter for a student.
 Date: ${currentDate}
 Recipient: ${recipientAddress}
 Student Name: ${data.name}
@@ -862,29 +862,31 @@ Justification/Details: ${data.details}
 The letter should be humble, respectful, and clearly state the request and the supporting reasons, concluding with a plea for favorable consideration.`;
             }
             
-            return `Write a professional document based on type: ${docType} and data: ${JSON.stringify(data)}`; 
+            return [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
+            ];
         }
 
         /**
-         * Calls the actual OpenAI API to generate the document text.
+         * Calls the actual OpenAI API to generate the document text using the Chat Completions endpoint.
          */
         async function callAIGenerator(docType, data, apiKey) {
-            const prompt = createAIPrompt(docType, data);
+            const messages = createAIPrompt(docType, data);
             
-            // The Real API Call Implementation
+            // The Real API Call Implementation using the Chat Completions endpoint (better and modern)
             try {
-                // Using the completions endpoint as in the old davinci model examples
-                const response = await fetch('https://api.openai.com/v1/completions', { 
+                const response = await fetch('https://api.openai.com/v1/chat/completions', { 
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}` // Key fetched from Firestore
+                        'Authorization': `Bearer ${apiKey}` 
                     },
                     body: JSON.stringify({
-                        model: "gpt-3.5-turbo-instruct", // A reliable completions model
-                        prompt: prompt,
+                        model: "gpt-3.5-turbo", // Recommended Chat Model
+                        messages: messages, // New Input Format
                         max_tokens: 1500,
-                        temperature: 0.7, // Creativity level
+                        temperature: 0.7, 
                     })
                 });
 
@@ -903,8 +905,8 @@ The letter should be humble, respectful, and clearly state the request and the s
                 }
 
                 const result = await response.json();
-                // Return the generated text, removing leading/trailing spaces/newlines
-                return result.choices[0].text.trim();
+                // Return the generated text from the first choice
+                return result.choices[0].message.content.trim(); 
 
             } catch (error) {
                 console.error("Fetch or processing error:", error);
@@ -981,9 +983,9 @@ ${data.matricNumber}`;
                   return `[Date]
 
 [Hiring Manager Name]
-${data.companyName}
+[Company Name Placeholder]
 
-Dear [Hiring Manager],
+Dear [Hiring Manager Name],
 
 I am writing to express my enthusiastic interest in the ${data.jobTitle} position at ${data.companyName}. Based on my proven ability to ${data.experience.split('\n')[0].substring(0, 50)}..., I am confident in my ability to deliver immediate value.
 
@@ -995,7 +997,7 @@ ${data.name}`;
                   return `[Date]
 
 [Manager Name]
-[Company Name]
+[Company Name Placeholder]
 
 Dear [Manager Name],
 
@@ -1042,35 +1044,54 @@ ${data.name}`;
             }
         }
         
-        // --- Payment Handler (MAJOR CHANGE: Removed confirm, added doc tracking) ---
+        // --- Payment Handler (MAJOR CHANGE: Form POST Logic) ---
         async function handlePayment() {
             if (!currentDocId || generatedDocumentText === "") {
                 showModal("⚠️ Please generate a document first!", true);
                 return;
             }
 
-            // 1. Store the document ID so the success page knows which document to mark as paid
+            // 1. Store the pending document ID so the success page knows which document to look for
             localStorage.setItem(STORAGE_PREFIX + PENDING_DOC_ID, currentDocId);
             
+            const priceText = document.getElementById('currentPrice').textContent.replace('₦', '');
+            const numericPrice = parseInt(priceText.replace(/[^\d]/g, '') || '500'); 
             const emailData = collectFormData(currentDocumentType);
-            const userEmail = emailData.email || document.getElementById('email')?.value || '';
+            const userEmail = emailData.email || document.getElementById('email')?.value || 'user@jobletters.xyz'; // Fallback email
             const userName = emailData.name || document.getElementById('fullName')?.value || 'Jobletters User';
             
-            // 2. Construct the payment link with reference and redirect URL
-            // NOTE: You MUST configure Flutterwave to accept these parameters and redirect to
-            // your hosted 'payment-success.html' page.
-            const redirectUrl = window.location.origin + "/payment-success.html";
-            
-            // Assuming the simple link can accept query parameters for reference tracking
-            const finalPaymentLink = `${FLUTTERWAVE_PAY_LINK}&tx_ref=${currentDocId}&redirect_url=${encodeURIComponent(redirectUrl)}&customer_email=${encodeURIComponent(userEmail)}&customer_name=${encodeURIComponent(userName)}`;
-
             showModal("💳 Redirecting to Flutterwave for secure payment...", false);
             
-            // 3. Redirect the user to the payment page
-            window.open(finalPaymentLink, '_self'); // Use _self to ensure user leaves the page
+            // 2. Create and Submit the Flutterwave Payment Form Dynamically (The robust way)
+            const form = document.createElement('form');
+            form.method = 'POST';
+            // Use Flutterwave's standard hosted checkout URL
+            form.action = 'https://checkout.flutterwave.com/v3/hosted/pay'; 
+            form.target = '_self'; // Open in the same tab
 
-            // Note: The old `confirm()` dialog and `setTimeout` are GONE.
-            // Verification now happens on the `payment-success.html` page.
+            // Add necessary hidden fields
+            const fields = {
+                public_key: FLUTTERWAVE_PUBLIC_KEY, // Use your provided key
+                tx_ref: currentDocId, // Use the unique document ID as the transaction reference
+                amount: numericPrice,
+                currency: "NGN",
+                // CRITICAL: Set this URL in your Flutterwave dashboard AND here
+                redirect_url: window.location.origin + "/payment-success.html", 
+                customer_email: userEmail,
+                customer_name: userName,
+            };
+
+            for (const key in fields) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key.startsWith('customer_') ? `customer[${key.split('_')[1]}]` : key; 
+                input.value = fields[key];
+                form.appendChild(input);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+            // document.body.removeChild(form); // Commented out to prevent flicker/error on submission
         }
         
         // --- Social Share Handler (Unchanged) ---
@@ -1099,7 +1120,6 @@ ${data.name}`;
 
         // --- Core Generator Functions (Unchanged) ---
         function collectFormData(docType) {
-            // ... (remains the same)
             if (docType === 'resume') {
                 return {
                     name: document.getElementById('fullName').value,
