@@ -32,7 +32,7 @@
       } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"; 
       
       const firebaseConfig = {
-        apiKey: "AIzaSyDLGrQQd2SEppdZooI7VWV7I7h4l_QAdZs", // This is safe to expose
+        apiKey: "AIzaSyDLGrQQd2SEppdZooI7VWV7I7h4l_QAdZs",
         authDomain: "jobletters-3c5ea.firebaseapp.com",
         projectId: "jobletters-3c5ea",
         storageBucket: "jobletters-3c5ea.firebasestorage.app",
@@ -53,7 +53,9 @@
     </script>
 
     <style>
-        /* Global Styles and Base */
+        /* ------------------------------------- */
+        /* Global Styles and Utilities */
+        /* ------------------------------------- */
         :root {
             --primary: #0047ab;
             --secondary: #667eea;
@@ -63,9 +65,6 @@
             --card-bg: white;
             --gradient-main: linear-gradient(135deg, var(--primary) 0%, #0066cc 100%);
             --gradient-ai: linear-gradient(135deg, var(--secondary) 0%, #764ba2 100%);
-            --success: #28a745;
-            --warning: #ffc107;
-            --danger: #dc3545;
         }
         * { box-sizing: border-box; scroll-behavior: smooth; }
         body { font-family: 'Montserrat', sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-color); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
@@ -79,10 +78,12 @@
         .logo i { color: var(--accent); margin-right: 8px; }
         .ai-badge { background: linear-gradient(135deg, #ff6b6b, var(--accent)); padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; color: #000; }
         .hamburger { font-size: 28px; cursor: pointer; display: none; color: white; transition: transform 0.3s ease; }
+        
         nav { display: flex; gap: 20px; }
         nav a { color: white; font-weight: 500; font-size: 16px; position: relative; }
         nav a::after { content: ''; position: absolute; width: 0%; height: 2px; bottom: -4px; left: 0; background-color: var(--accent); transition: width 0.3s ease; }
         nav a:hover::after { width: 100%; }
+        
         @media (max-width: 768px) {
             nav { position: fixed; top: 60px; right: 0; background: var(--primary); height: calc(100% - 60px); width: 200px; flex-direction: column; padding: 20px; transform: translateX(100%); transition: transform 0.3s ease; box-shadow: -2px 0 6px rgba(0,0,0,0.2); }
             nav.open { transform: translateX(0); }
@@ -91,65 +92,195 @@
         }
 
         /* Main Content and Forms */
-        .container { max-width: 900px; margin: 40px auto 80px; padding: 0 20px; }
-        .hero { background: var(--card-bg); padding: 40px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.07); margin-bottom: 30px; }
-        .hero h1 { font-size: 28px; font-weight: 700; color: var(--primary); margin-top: 0; display: flex; align-items: center; gap: 10px; }
+        .container { 
+            max-width: 900px; 
+            margin: 40px auto 80px; 
+            padding: 0 20px; 
+        }
+        
+        .hero { 
+            background: var(--card-bg); 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.07); 
+            margin-bottom: 30px; 
+        }
+        .hero h1 { 
+            font-size: 28px; 
+            font-weight: 700; 
+            color: var(--primary); 
+            margin-top: 0; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+        }
         .hero h1 i { color: var(--accent); }
-        h3 { margin-top: 35px; color: var(--primary); user-select: none; }
-        p { line-height: 1.5; }
-        .highlight { padding: 15px; margin: 15px 0; border-radius: 8px; background-color: #e6f3ff; border-left: 5px solid var(--primary); font-size: 0.95em; }
+        
+        h3 {
+            margin-top: 35px;
+            color: #0047ab;
+            user-select: none;
+        }
+        p {
+            line-height: 1.5;
+        }
+
+        .highlight {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            background-color: #e6f3ff;
+            border-left: 5px solid var(--primary);
+            font-size: 0.95em;
+        }
+
         .form-section { background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        
+        /* Form Element Styles */
         label { font-weight: 600; margin-top: 20px; display: block; }
-        input[type="text"], input[type="email"], textarea, select { font-family: 'Montserrat', sans-serif; font-size: 16px; border-radius: 6px; border: 1.5px solid #ccc; padding: 12px 15px; margin: 5px 0 0; width: 100%; transition: border-color 0.3s ease; outline-offset: 2px; }
+        input[type="text"], input[type="email"], textarea, select { 
+            font-family: 'Montserrat', sans-serif; 
+            font-size: 16px; 
+            border-radius: 6px; 
+            border: 1.5px solid #ccc; 
+            padding: 12px 15px; 
+            margin: 5px 0 0; 
+            width: 100%; 
+            transition: border-color 0.3s ease; 
+            outline-offset: 2px;
+        }
         input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 6px rgba(0, 71, 171, 0.2); }
         textarea { min-height: 120px; resize: vertical; }
 
         /* Buttons */
-        .button { border: none; color: white; font-weight: 700; padding: 15px 30px; border-radius: 6px; cursor: pointer; transition: opacity 0.3s ease, transform 0.2s ease; margin-top: 25px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+        .button { 
+            border: none; 
+            color: white; 
+            font-weight: 700; 
+            padding: 15px 30px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            transition: opacity 0.3s ease, transform 0.2s ease; 
+            margin-top: 25px; 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
         #generateBtn { background: var(--gradient-ai); width: 100%; font-size: 18px; }
-        #generateBtn:hover:not(:disabled) { opacity: 0.95; transform: translateY(-1px); }
+        #generateBtn:hover { opacity: 0.95; transform: translateY(-1px); }
         #generateBtn:disabled { background: #ccc; cursor: not-allowed; }
-        #generateBtn.ai-generating { background: var(--secondary) !important; animation: pulse 1s infinite alternate; }
-        @keyframes pulse { from { opacity: 1; } to { opacity: 0.8; } }
-
+        #generateBtn.ai-generating { background: #ff6b6b; cursor: wait; }
+        
         /* Preview Section */
         #preview-section { margin-top: 40px; background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        #preview-section h2 { color: var(--success); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
-        #letter { white-space: pre-wrap; font-family: monospace; background: #fafafa; padding: 15px; border: 1px dashed #ccc; border-radius: 6px; max-height: 400px; overflow-y: auto; margin-bottom: 20px; user-select: none; cursor: default; }
-        #letter.unlocked { user-select: text; cursor: text; }
+        #preview-section h2 { color: #28a745; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
+        
+        /* DRAFT SECURITY: Disable Copying and Selection */
+        #letter { 
+            white-space: pre-wrap; 
+            font-family: monospace; 
+            background: #fafafa; 
+            padding: 15px; 
+            border: 1px dashed #ccc; 
+            border-radius: 6px; 
+            max-height: 400px; 
+            overflow-y: auto; 
+            margin-bottom: 20px;
+            /* Disable Selection and Copying */
+            -webkit-user-select: none;  /* Safari */
+            -moz-user-select: none;     /* Firefox */
+            -ms-user-select: none;      /* IE10+ */
+            user-select: none;          /* Standard */
+            cursor: default;
+        }
+        
+        /* Enable Selection on Payment */
+        #letter.unlocked {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+            cursor: text;
+        }
+
         .preview-actions { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
         .preview-actions button, .preview-actions a { flex: 1; min-width: 150px; max-width: 250px; font-size: 16px; }
-        #payBtn { background: linear-gradient(45deg, var(--warning), #ff9800); color: var(--text-color); }
-        #downloadBtn { background: linear-gradient(45deg, var(--success), #1e7e34); display: none; }
-        #regenerateBtn { background-color: var(--primary); }
-        .disabled-action { opacity: 0.6; cursor: not-allowed !important; background: #ccc !important; color: #666 !important; }
-        .small-action-btns { display: flex; justify-content: space-around; margin-top: 15px; }
-        .small-action-btns button { background: none; color: var(--primary); border: 1px solid #eee; padding: 10px 15px; width: 48%; }
+        
+        #payBtn { background: linear-gradient(45deg, #ffc107, #ff9800); color: var(--text-color); }
+        #payBtn:disabled { background: #ccc; cursor: not-allowed; }
+        #downloadBtn { background: linear-gradient(45deg, #28a745, #1e7e34); display: none; }
+        #downloadBtn:disabled { background: #ccc; cursor: not-allowed; }
+        #regenerateBtn { background-color: #007bff; }
+
+        /* Disable buttons on the final draft until payment */
+        .disabled-action { opacity: 0.6; cursor: not-allowed !important; }
+
         
         /* Spinner */
         .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid white; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Modal */
-        .modal { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 100%); background: #333; color: white; padding: 15px 25px; border-radius: 8px; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.5s ease-out, opacity 0.5s; opacity: 0; }
-        .modal.error { background-color: var(--danger); }
+        /* Modal (For alerts/messages) */
+        .modal { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 100%); background: #333; color: white; padding: 15px 25px; border-radius: 8px; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.5s ease-out; opacity: 0; }
+        .modal.error { background-color: #dc3545; }
         .modal.show { transform: translate(-50%, 0); opacity: 1; }
 
         /* Social Share buttons */
-        .social-share { display: flex; justify-content: center; gap: 15px; margin: 35px 0 0; }
-        .social-share button { background: none; border: none; cursor: pointer; font-size: 24px; color: var(--primary); transition: color 0.3s ease; user-select: none; width: auto; margin: 0; }
-        .social-share button:hover { color: #003380; }
+        .social-share {
+          display: flex;
+          justify-content: center;
+          gap: 15px;
+          margin: 35px 0 0;
+        }
+        
+        .social-share button {
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 24px;
+          color: #007bff;
+          transition: color 0.3s ease;
+          user-select: none;
+          width: auto;
+          margin: 0;
+        }
+        
+        .social-share button:hover {
+          color: #0056b3;
+        }
 
         /* Footer */
         footer { background-color: #222; color: #ccc; padding: 25px 20px; text-align: center; font-size: 14px; margin-top: 40px; }
         footer a { color: var(--accent); font-weight: 600; }
 
-        /* Print Styles */
+        /* Print Styles (Crucial for Print Button) */
         @media print {
-            body > *:not(main), header, footer, .preview-actions, .hero, .form-section { display: none !important; }
-            .container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
-            #preview-section { padding: 0 !important; margin: 0 !important; box-shadow: none !important; background: white !important; }
-            #letter { max-height: none !important; overflow: visible !important; border: none !important; padding: 1in !important; user-select: text !important; font-family: 'Times New Roman', serif; font-size: 12pt; white-space: pre-wrap; }
+            body > *:not(main), header, footer, .preview-actions, .hero, .form-section {
+                display: none !important;
+            }
+            .container {
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+            }
+            #preview-section {
+                padding: 0 !important;
+                margin: 0 !important; /* Use important if needed */
+                box-shadow: none !important;
+                background: white !important;
+            }
+            #letter {
+                max-height: none !important;
+                overflow: visible !important;
+                border: none !important;
+                padding: 1in !important; /* Standard print margin */
+                user-select: text !important;
+                font-family: 'Times New Roman', serif; 
+                font-size: 12pt;
+                white-space: pre-wrap;
+            }
         }
     </style>
 </head>
@@ -238,7 +369,7 @@
                     <label for="rl_position">Your Current Position *</label>
                     <input type="text" id="rl_position" placeholder="e.g. Marketing Executive" required />
                     <label for="rl_lastDay">Intended Last Day of Employment *</label>
-                    <input type="date" id="rl_lastDay" required />
+                    <input type="text" id="rl_lastDay" placeholder="e.g. October 30, 2025 (Allowing for notice period)" required />
                     <label for="rl_reason">Reason for Resignation (Optional, for draft inclusion)</label>
                     <textarea id="rl_reason" placeholder="e.g. Pursuing a new career opportunity; Relocation; Personal reasons."></textarea>
                 </div>
@@ -323,12 +454,11 @@
 
     <script>
         const STORAGE_PREFIX = 'jobletters_';
-        // IMPORTANT: Fallback key for use if Firestore fails. Should NOT be a real key.
         const DEFAULT_MOCK_API_KEY = 'sk-jobletters-default-mock-key'; 
-        // NOTE: This is the PUBLIC KEY provided by the user.
+        // NOTE: This is the KEY provided by the user.
         const FLUTTERWAVE_PUBLIC_KEY = "FLWPUBK-05bb86af711fd1998eb529cb0bc4e0f4-X"; 
         
-        // Constants for payment flow
+        // These constants are used to track the payment flow
         const SESSION_PAID_FLAG = 'verified_doc_id'; 
         const PENDING_DOC_ID = 'pendingDocId'; 
 
@@ -337,7 +467,7 @@
         let isPaid = false; 
         let currentDocId = null; 
 
-        // --- PWA Service Worker Registration ---
+        // --- PWA Service Worker Registration (Unchanged) ---
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
             navigator.serviceWorker.register('/service-worker.js').then(registration => {
@@ -348,22 +478,28 @@
           });
         }
 
-        // --- Menu Toggle Script ---
+        // --- Menu Toggle Script (Unchanged) ---
         const hamburger = document.getElementById('hamburger');
         const navMenu = document.getElementById('navMenu');
         hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
 
-        // --- Payment Persistence & Firebase Metrics ---
+        // --- Payment Persistence & Firebase Metrics (UPDATED) ---
         
+        /**
+         * Checks for a verified payment ID in the URL or session storage,
+         * then fetches and unlocks the document if Firestore confirms payment.
+         */
         async function checkSessionPayment() {
+            // 1. Check for ID in the URL (The primary way the payment-success page communicates)
             const urlParams = new URLSearchParams(window.location.search);
             const verifiedDocId = urlParams.get('docId') || sessionStorage.getItem(SESSION_PAID_FLAG);
 
             if (verifiedDocId) {
-                // Clear state immediately to prevent reuse
+                // Clear the URL parameter and session flag immediately after reading
                 sessionStorage.removeItem(SESSION_PAID_FLAG); 
                 window.history.replaceState({}, document.title, window.location.pathname); 
 
+                // 2. Fetch the document from Firestore for confirmation
                 if (window.db && window.firebase) {
                     const { doc, getDoc } = window.firebase;
                     const docRef = doc(window.db, "documents", verifiedDocId);
@@ -372,19 +508,25 @@
                         
                         if (docSnap.exists() && docSnap.data().isPaid) {
                             const data = docSnap.data();
+                            
+                            // Load the unlocked content
                             generatedDocumentText = data.draftContent;
                             currentDocId = verifiedDocId;
-                            currentDocumentType = data.type; 
+                            currentDocumentType = data.type; // Load document type for PDF naming
+                            
+                            // Re-populate form fields is complex, skip for now. Focus on unlocking.
 
                             document.getElementById('letter').textContent = generatedDocumentText;
                             document.getElementById('preview-section').classList.remove('hidden');
                             
-                            // Metrics were updated on success page, just unlock here
+                            // Unlock and track metrics
+                            // NOTE: Metrics are updated on payment-success.html now. Removed from here.
                             updateDownloadButtons(true);
                             showModal("🎉 Payment verified! Your document is unlocked.", false);
                             document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
                             return true;
                         } else {
+                             // Document exists but isPaid is false (failed/unconfirmed payment)
                              showModal("⚠️ Document found, but payment is not verified. Please try payment again or contact support.", true);
                         }
                     } catch (error) {
@@ -396,31 +538,11 @@
             return false;
         }
 
-        async function updatePaidMetrics() {
-             // This function is now primarily called on payment-success.html
-             // Kept here for potential fallback if needed, but not critical for unlock
-             const priceText = document.getElementById('currentPrice').textContent.replace('₦', '');
-             const numericPrice = parseInt(priceText.replace(/[^\d]/g, '') || '500'); 
-                     
-             if (window.db && window.firebase) {
-                 const { doc, updateDoc, increment, serverTimestamp } = window.firebase;
-                 const configRef = doc(window.db, "settings", "config");
-                 try {
-                     await updateDoc(configRef, {
-                         totalIncome: increment(numericPrice),
-                         totalDownloads: increment(1),
-                         lastUpdated: serverTimestamp()
-                     });
-                 } catch (error) {
-                     console.error("Error updating payment metrics in Firestore:", error);
-                 }
-             } else {
-                 incrementMetric('income', numericPrice);
-                 incrementMetric('downloads');
-             }
-        }
-        
         // --- Save Document Draft ---
+
+        /**
+         * Saves the initial draft to Firestore and returns the unique ID.
+         */
         async function saveDocumentDraft(docType, data, content) {
             if (!window.db || !window.firebase) {
                  currentDocId = 'mock_doc_' + Date.now();
@@ -428,17 +550,17 @@
             }
             
             const { doc, setDoc, serverTimestamp } = window.firebase;
-            // Generate a more robust unique ID
-            const docRef = doc(window.db, "documents", "DOC_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8)); 
+            // Generate a unique ID using Firestore's auto-ID for 'documents' collection
+            const docRef = doc(window.db, "documents", "DOC_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8)); // More robust ID
             currentDocId = docRef.id;
 
             try {
                 await setDoc(docRef, {
                     docId: currentDocId,
                     type: docType,
-                    data: data, 
+                    data: data, // Save the form data
                     draftContent: content,
-                    isPaid: false, 
+                    isPaid: false, // CRITICAL: starts as false
                     createdAt: serverTimestamp()
                 });
                 console.log("Document draft saved with ID:", currentDocId);
@@ -450,7 +572,7 @@
             }
         }
         
-        // --- Load/Save Data Functions ---
+        // --- Load/Save Data Functions (Unchanged) ---
         function loadSavedData() {
             if (document.getElementById('saveDataCheckbox')) {
                 if (localStorage.getItem(STORAGE_PREFIX + 'saveDataCheckbox') === 'true') {
@@ -462,40 +584,24 @@
         }
         
         function saveData(data) {
-            let savedUsers = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'savedUsers') || '[]');
-            
-            const contactData = {
-                name: data.name,
-                email: data.email,
-                lastGenerated: new Date().toISOString()
-            };
-
-            // Local storage for autofill
+            // Local storage save for autofill (remains the same)
             if (document.getElementById('saveDataCheckbox')?.checked) {
                 localStorage.setItem(STORAGE_PREFIX + 'saveDataCheckbox', 'true');
-                localStorage.setItem(STORAGE_PREFIX + 'fullName', contactData.name);
-                localStorage.setItem(STORAGE_PREFIX + 'email', contactData.email);
+                localStorage.setItem(STORAGE_PREFIX + 'fullName', data.name);
+                localStorage.setItem(STORAGE_PREFIX + 'email', data.email);
             } else {
                 localStorage.removeItem(STORAGE_PREFIX + 'saveDataCheckbox');
                 localStorage.removeItem(STORAGE_PREFIX + 'fullName');
                 localStorage.removeItem(STORAGE_PREFIX + 'email');
             }
-
-            // Save user for Admin Mock Data Table (using email as key in localStorage)
-            const existingIndex = savedUsers.findIndex(user => user.email === contactData.email);
-            if (existingIndex > -1) {
-                savedUsers[existingIndex] = contactData;
-            } else {
-                savedUsers.push(contactData);
-            }
-            localStorage.setItem(STORAGE_PREFIX + 'savedUsers', JSON.stringify(savedUsers));
+            // User data saving for admin table now moved to Firestore in generateDocument
         }
 
         /**
-         * Initializes the app: Fetches settings, checks admin access, loads saved data, checks payment status.
+         * Initializes the app by fetching settings from Firestore and checking payment status.
          */
         async function initApp() {
-            // Ensure a fallback API key is in local storage if none exists
+            // Ensure default mock API key is set if Firestore fails
             if (!localStorage.getItem(STORAGE_PREFIX + 'api_key')) {
                 localStorage.setItem(STORAGE_PREFIX + 'api_key', DEFAULT_MOCK_API_KEY);
             }
@@ -506,7 +612,7 @@
             
             let price = localStorage.getItem(STORAGE_PREFIX + 'price') || '₦500';
             
-            // Fetch price and API key from Firebase
+            // Fetch price and API key from Firebase (Robustness)
             if (window.db && window.firebase) {
                 const { doc, getDoc, setDoc, serverTimestamp } = window.firebase;
                 const configRef = doc(window.db, "settings", "config");
@@ -519,7 +625,7 @@
                         localStorage.setItem(STORAGE_PREFIX + 'api_key', fetchedKey);
                         localStorage.setItem(STORAGE_PREFIX + 'price', price);
                     } else {
-                        console.warn("Config document not found. Initializing defaults.");
+                        console.warn("Config document not found. Initializing defaults in Firestore.");
                         await setDoc(configRef, { 
                             apiKey: DEFAULT_MOCK_API_KEY, 
                             documentPrice: '₦500',
@@ -530,7 +636,7 @@
                         });
                     }
                 } catch (error) {
-                    console.warn("Network/Firestore error fetching settings. Using fallback.", error);
+                    console.warn("Network/Firestore error fetching settings. Using fallback key/price.", error);
                 }
             }
 
@@ -538,15 +644,16 @@
             loadSavedData();
             document.getElementById('letter').oncontextmenu = () => false; 
 
-            // Check if user returned from payment page
+            // Crucial Check for payment confirmation immediately on page load
             await checkSessionPayment();
         };
 
         window.addEventListener('load', () => {
+             // Delay to ensure Firebase SDK loads
              setTimeout(initApp, 500); 
         });
 
-        // --- Form Display Logic ---
+        // --- Form Display Logic (Unchanged) ---
         function showForm(docType) {
           const forms = document.querySelectorAll('#formsContainer > div');
           forms.forEach(form => form.classList.add('hidden'));
@@ -565,32 +672,35 @@
           }
           currentDocumentType = docType;
           
-          // Reset isPaid state if user selects a new document type, unless just returned from payment
-          if (sessionStorage.getItem(SESSION_PAID_FLAG) !== 'true') {
-             if (currentDocId && isPaid) {
-                 isPaid = false; 
-                 updateDownloadButtons(false);
-             }
+          // Reset isPaid state if the user selects a new document type
+          if (currentDocId && isPaid && currentDocumentType !== (document.getElementById('documentType').value || '')) {
+             isPaid = false; 
+             updateDownloadButtons(false);
           }
         }
 
-        // --- Academic Prompt Helper ---
+        // --- Academic Prompt Helper (Unchanged) ---
         function updateAcademicPrompt(purpose) {
             const label = document.getElementById('ac_details_label');
-            if (purpose === 'course_change') { label.textContent = "Courses to Add/Drop and Justification *"; } 
-            else if (purpose === 'result_statement') { label.textContent = "Specify Academic Session(s) and Reason for Request *"; } 
-            else if (purpose === 'apology') { label.textContent = "Dates and Circumstances Requiring Apology *"; } 
-            else { label.textContent = "Details / Justification *"; }
+            if (purpose === 'course_change') {
+                label.textContent = "Courses to Add/Drop and Justification *";
+            } else if (purpose === 'result_statement') {
+                label.textContent = "Specify Academic Session(s) and Reason for Request *";
+            } else if (purpose === 'apology') {
+                label.textContent = "Dates and Circumstances Requiring Apology *";
+            } else {
+                label.textContent = "Details / Justification *";
+            }
         }
 
-        // --- Core Generation Logic (UPDATED AI MODEL) ---
+        // --- Core Generation Logic (UPDATED AI MODEL & DRAFT SAVING) ---
         async function generateDocument() {
             const btn = document.getElementById('generateBtn');
             btn.disabled = true;
             btn.innerHTML = 'AI is Drafting... <span class="spinner"></span>';
             btn.classList.add('ai-generating');
             document.getElementById('preview-section').classList.add('hidden');
-            document.getElementById('letter').classList.remove('unlocked');
+            document.getElementById('letter').classList.remove('unlocked'); // Lock selection
 
             if (!validateForm(currentDocumentType)) {
                 showModal("⚠️ Please fill in all required fields (*).", true);
@@ -602,8 +712,9 @@
 
             const data = collectFormData(currentDocumentType);
             
+            // Save contact details locally if checked
             if (currentDocumentType === 'resume' || currentDocumentType === 'coverLetter') {
-                 saveData(data);
+                 saveData(data); // Local storage save
             }
 
             const adminKey = localStorage.getItem(STORAGE_PREFIX + 'api_key');
@@ -614,16 +725,17 @@
                  generatedDocumentText = await callAIGenerator(currentDocumentType, data, adminKey);
             }
             
-            // 1. Save the generated draft to Firestore
+            // 1. Save the generated draft to Firestore (This MUST succeed before payment)
             currentDocId = await saveDocumentDraft(currentDocumentType, data, generatedDocumentText);
             if (!currentDocId) {
+                // Error handled inside saveDocumentDraft
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
                 btn.classList.remove('ai-generating');
                 return; 
             }
 
-            // 2. Update Generation Metrics
+            // 2. Update Generation Metrics (Only if NOT using the mock key)
             if (adminKey !== DEFAULT_MOCK_API_KEY) { 
                 if (window.db && window.firebase) {
                      const { doc, updateDoc, increment } = window.firebase;
@@ -632,26 +744,26 @@
                          await updateDoc(configRef, { totalGenerations: increment(1) });
                      } catch (e) {
                          console.warn("Could not increment Firestore generation count.", e);
-                         incrementMetric('generations'); // Fallback
                      }
                 } else {
-                     incrementMetric('generations');
+                     incrementMetric('generations'); // Fallback
                 }
             }
 
 
             // 3. Display Results
             document.getElementById('letter').textContent = generatedDocumentText;
+            
             document.getElementById('preview-section').classList.remove('hidden');
             document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
             
             isPaid = false; 
-            updateDownloadButtons(false); 
+            updateDownloadButtons(false); // Ensure buttons are locked after new generation
 
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-magic"></i> Generate AI-Enhanced Document';
             btn.classList.remove('ai-generating');
-            showModal("✅ AI Draft complete! Document ID: " + currentDocId);
+            showModal("✅ AI Draft complete! Ready for payment.");
         }
         
         function regenerateDocument() {
@@ -728,8 +840,8 @@ The letter should be humble, respectful, and clearly state the request and the s
                         'Authorization': `Bearer ${apiKey}`
                     },
                     body: JSON.stringify({
-                        model: "gpt-3.5-turbo", // <-- Recommended model (cost-effective)
-                        messages: messages, // <-- New Input Format
+                        model: "gpt-3.5-turbo", // <-- Chat Model
+                        messages: messages, // <-- Chat Format
                         max_tokens: 1500,
                         temperature: 0.7, 
                     })
@@ -853,7 +965,7 @@ ${data.name}`;
          }
 
 
-        // --- Download Button Control Function ---
+        // --- Download Button Control Function (Unchanged) ---
         function updateDownloadButtons(paidStatus) {
             isPaid = paidStatus;
             const payBtn = document.getElementById('payBtn');
