@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Jobletters.xyz - Admin Panel</title>
+    <title>🔒 Jobletters.xyz - Admin Panel</title>
 
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0047ab">
@@ -14,11 +14,13 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
       import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
+      
       // --- NEW IMPORTS for Authentication ---
       import { 
           getAuth, 
           signInWithEmailAndPassword, 
-          onAuthStateChanged // To check user status on load
+          onAuthStateChanged,
+          signOut // Added signOut for completeness
       } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
       // ----------------------------------------
 
@@ -36,7 +38,7 @@
       } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"; 
       
       const firebaseConfig = {
-        apiKey: "AIzaSyDLGrQQd2SEppdZooI7VWV7I7h4l_QAdZs",
+        apiKey: "AIzaSyDLGrQQd2SEppdZooI7VWV7I7h4l_QAdZs", // SAFE to expose
         authDomain: "jobletters-3c5ea.firebaseapp.com",
         projectId: "jobletters-3c5ea",
         storageBucket: "jobletters-3c5ea.firebasestorage.app",
@@ -56,7 +58,7 @@
           doc, getDoc, setDoc, collection, 
           serverTimestamp, getDocs, query, orderBy,
           // Expose Auth functions
-          signInWithEmailAndPassword, onAuthStateChanged 
+          signInWithEmailAndPassword, onAuthStateChanged, signOut 
       };
     </script>
 
@@ -72,6 +74,12 @@
         h2 { color: var(--primary); text-align: center; margin-top: 0; font-size: 28px; }
         h2 i { color: var(--accent); margin-right: 10px; }
         
+        /* Header Actions */
+        .header-actions { display: flex; gap: 20px; align-items: center; }
+        .header-actions a { color: white; text-decoration: none; }
+        .header-actions button { background: var(--danger); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background-color 0.2s; }
+        .header-actions button:hover { background: #c82333; }
+
         /* Dashboard Grid */
         .dashboard-grid { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 30px; }
         .metric-card { flex: 1 1 200px; background: var(--card-bg); padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 5px solid var(--primary); transition: transform 0.2s; }
@@ -101,7 +109,7 @@
         .user-table tr:hover { background-color: #e6f0ff; }
         .loading-text { text-align: center; color: #777; padding: 20px; }
 
-        /* Login Screen - Updated to use Email/Password */
+        /* Login Screen */
         .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .login-box { background: var(--card-bg); padding: 40px; border-radius: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 400px; }
         .login-box h3 { color: var(--primary); margin-bottom: 20px; font-size: 24px; }
@@ -119,7 +127,10 @@
 <body>
     <header>
         <div class="logo"><i class="fas fa-lock"></i> Admin Panel</div>
-        <a href="index.html" style="color: white; text-decoration: none;"><i class="fas fa-home"></i> Go to App</a>
+        <div class="header-actions">
+            <a href="index.html"><i class="fas fa-home"></i> Go to App</a>
+            <button id="logoutBtn" onclick="handleLogout()" class="hidden"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
     </header>
 
     <main class="container hidden" id="adminContent">
@@ -145,7 +156,7 @@
             <form id="settingsForm">
                 <p style="color: var(--danger); font-weight: 600;">⚠️ **CRITICAL SECURITY NOTE:** Never commit the **REAL** AI API Key to a public repository. This panel only updates the Firestore database, which the app reads.</p>
 
-                <label for="apiKey">AI API Key (Must be revoked if exposed)</label>
+                <label for="apiKey">AI API Key</label>
                 <input type="password" id="apiKey" placeholder="sk-proj-**********************************" required />
                 
                 <label for="documentPrice">Document Price (e.g., ₦500 or $5)</label>
@@ -192,12 +203,6 @@
 
     <script>
         const STORAGE_PREFIX = 'jobletters_';
-        
-        // --- NOTE: ADMIN_EMAIL and ADMIN_PASSWORD must be replaced with the credentials of an admin user in your Firebase Authentication. ---
-        const ADMIN_EMAIL = 'nazzaraymond@gmail.com'; 
-        const ADMIN_PASSWORD = 'tornadop1'; 
-        // -----------------------------------------------------------------------------------------------------------------------------------
-
 
         // --- Utility Functions ---
         function showModal(message, isError = false) {
@@ -213,13 +218,24 @@
             }, 4000);
         }
         
-        function showAdminContent() {
-             document.getElementById('loginOverlay').classList.add('hidden');
-             document.getElementById('adminContent').classList.remove('hidden');
-             initAdminDashboard();
+        function showAdminContent(isLoggedIn) {
+             const adminContent = document.getElementById('adminContent');
+             const loginOverlay = document.getElementById('loginOverlay');
+             const logoutBtn = document.getElementById('logoutBtn');
+
+             if (isLoggedIn) {
+                 loginOverlay.classList.add('hidden');
+                 adminContent.classList.remove('hidden');
+                 logoutBtn.classList.remove('hidden');
+                 initAdminDashboard();
+             } else {
+                 adminContent.classList.add('hidden');
+                 loginOverlay.classList.remove('hidden');
+                 logoutBtn.classList.add('hidden');
+             }
         }
 
-        // --- Admin Login Logic (Updated to use Firebase Auth) ---
+        // --- Admin Login/Logout Logic (Firebase Auth) ---
         async function handleLogin() {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
@@ -229,50 +245,49 @@
                 return;
             }
 
-            // Optional: You can check against the hardcoded values here or use the secure way below.
-            // If you choose to check against hardcoded values, use the same ADMIN_EMAIL and ADMIN_PASSWORD
-            // defined above.
-
             try {
-                // Secure way: Sign in with the provided credentials. This will only work 
-                // if the user exists in Firebase Authentication.
+                // Sign in with Firebase Authentication
                 await window.firebase.signInWithEmailAndPassword(window.auth, email, password);
                 showModal("🔑 Welcome, Admin!");
-                // onAuthStateChanged listener (in checkLoginStatus) will handle showing the content
+                // The 'onAuthStateChanged' listener will handle the content display.
             } catch (error) {
                 console.error("Firebase Login Error:", error);
-                // Check for common errors and give a better message
-                let errorMessage = "❌ Login failed. Check credentials/network.";
+                let errorMessage = "❌ Login failed. Check network.";
                 if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                    errorMessage = "❌ Invalid Email or Password.";
+                    errorMessage = "❌ Invalid Email or Password. User not found or incorrect credentials.";
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = "❌ Invalid email format.";
                 }
                 showModal(errorMessage, true);
             }
         }
 
+        async function handleLogout() {
+             try {
+                await window.firebase.signOut(window.auth);
+                showModal("👋 Logged out successfully.");
+                // The 'onAuthStateChanged' listener will handle the content display.
+             } catch (error) {
+                console.error("Firebase Logout Error:", error);
+                showModal("❌ Logout failed. Try again.", true);
+             }
+        }
+
         function checkLoginStatus() {
+             // Listener that runs whenever the user's sign-in state changes
              window.firebase.onAuthStateChanged(window.auth, (user) => {
                 if (user) {
-                    // User is signed in. Show admin panel.
-                    showAdminContent();
+                    showAdminContent(true);
                 } else {
-                    // User is signed out. Show login overlay.
-                    document.getElementById('adminContent').classList.add('hidden');
-                    document.getElementById('loginOverlay').classList.remove('hidden');
+                    showAdminContent(false);
                 }
             });
         }
 
         // --- Firestore Data Handlers ---
 
-        /**
-         * Fetches and displays the main dashboard metrics and current settings.
-         */
         async function fetchDashboardMetrics() {
-            if (!window.db || !window.firebase) {
-                console.error("Firebase not initialized.");
-                return;
-            }
+            if (!window.db || !window.firebase) return;
 
             const { doc, getDoc } = window.firebase;
             const configRef = doc(window.db, "settings", "config");
@@ -288,11 +303,10 @@
                     document.getElementById('totalDownloads').textContent = data.totalDownloads ? data.totalDownloads.toLocaleString() : '0';
 
                     // Load Settings for editing
-                    // NOTE: Hiding the API key by default for security, even though it's the admin panel
                     document.getElementById('apiKey').value = data.apiKey || ''; 
                     document.getElementById('documentPrice').value = data.documentPrice || '₦500';
 
-                    // Update localStorage for index.html sync (Critical)
+                    // Update localStorage for index.html sync (Optional but useful)
                     localStorage.setItem(STORAGE_PREFIX + 'api_key', data.apiKey || '');
                     localStorage.setItem(STORAGE_PREFIX + 'price', data.documentPrice || '₦500');
 
@@ -301,25 +315,21 @@
                 }
             } catch (error) {
                 console.error("Error fetching dashboard metrics:", error);
-                // The main app error: Network/Firestore error fetching settings (permission-denied)
-                // This is likely still happening here, but we now focus on fixing the WRITE issue.
-                showModal("❌ Error fetching data from Firestore. Check READ permissions.", true); 
+                // Auth failure is checked in checkLoginStatus, this handles data read errors
+                showModal("❌ Error fetching metrics. Check Firestore READ permissions.", true); 
             }
         }
 
-        /**
-         * Fetches and populates the user generation table.
-         */
         async function fetchUserTable() {
             if (!window.db || !window.firebase) return;
 
-            const { collection, getDocs, query, orderBy } = window.firebase;
+            const { collection, getDocs, query, orderBy, serverTimestamp } = window.firebase;
             const usersCol = collection(window.db, "users");
-            // The query only works if the authenticated admin user has READ permission on the 'users' collection
+            // Querying by a common field like lastGenerated for ordering
             const q = query(usersCol, orderBy("lastGenerated", "desc")); 
             const tableBody = document.getElementById('userTableBody');
             
-            tableBody.innerHTML = ''; // Clear existing data
+            tableBody.innerHTML = ''; 
             document.querySelector('.loading-text').classList.remove('hidden');
             document.getElementById('userTable').classList.add('hidden');
 
@@ -329,7 +339,7 @@
                 
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    // Firebase Timestamps need to be converted to Date objects before calling toLocaleString
+                    // Convert Firebase Timestamp to a readable string
                     const lastActivity = data.lastGenerated && typeof data.lastGenerated.toDate === 'function' 
                         ? data.lastGenerated.toDate().toLocaleString() 
                         : 'N/A';
@@ -351,21 +361,18 @@
 
             } catch (error) {
                 console.error("Error fetching user table:", error);
-                document.querySelector('.loading-text').textContent = "Error loading user data (Permission Denied).";
+                document.querySelector('.loading-text').textContent = "Error loading user data. Check Firestore READ permissions for '/users'.";
             }
         }
 
-        /**
-         * Saves the AI API Key and Document Price to Firestore.
-         */
         async function saveSettings(event) {
             event.preventDefault();
             const saveBtn = document.getElementById('saveSettingsBtn');
             saveBtn.disabled = true;
 
+            // CRITICAL: Ensure user is logged in before attempting write
             if (!window.db || !window.firebase || !window.auth.currentUser) {
-                // This check is now the main line of defense against the write error.
-                showModal("❌ Database or Authentication failed. Are you logged in?", true); 
+                showModal("❌ You must be logged in as an Admin to save settings.", true); 
                 saveBtn.disabled = false;
                 return;
             }
@@ -383,12 +390,12 @@
             const configRef = doc(window.db, "settings", "config");
 
             try {
-                // This operation now uses the authenticated user's credentials, 
-                // which should bypass the 'permission-denied' WRITE error if Firestore rules are correct.
+                // Authenticated WRITE operation
                 await setDoc(configRef, {
                     apiKey: apiKey,
                     documentPrice: documentPrice,
-                    lastUpdated: serverTimestamp()
+                    lastUpdated: serverTimestamp(),
+                    // Do not overwrite metric counters here
                 }, { merge: true }); 
 
                 // Update localStorage for index.html sync
@@ -396,12 +403,12 @@
                 localStorage.setItem(STORAGE_PREFIX + 'price', documentPrice);
 
                 showModal("✅ Settings saved successfully! App key/price updated.");
-                fetchDashboardMetrics(); // Refresh to ensure metrics are current
+                fetchDashboardMetrics(); 
 
             } catch (error) {
                 console.error("Error saving settings:", error);
-                // This error should now be very rare if auth is successful.
-                showModal("❌ Error saving settings to Firestore. Check Firestore WRITE rules.", true); 
+                // This is the error the Firebase Auth rule should prevent if not logged in
+                showModal("❌ Error saving settings. Check Firestore WRITE rules for 'settings/config'.", true); 
             } finally {
                 saveBtn.disabled = false;
             }
@@ -417,9 +424,8 @@
             fetchUserTable();
         }
 
-        // Check login status on page load (now uses Firebase onAuthStateChanged)
+        // Check login status on page load
         document.addEventListener('DOMContentLoaded', checkLoginStatus);
-
     </script>
 </body>
 </html>
