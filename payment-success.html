@@ -11,7 +11,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
         import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"; 
         
-        // NOTE: Use the SAME Firebase Config from your index.html
+        // Use the SAME Firebase Config from your index.html
         const firebaseConfig = {
             apiKey: "AIzaSyDLGrQQd2SEppdZooI7VWV7I7h4l_QAdZs",
             authDomain: "jobletters-3c5ea.firebaseapp.com",
@@ -25,7 +25,33 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app); 
         
+        // Expose necessary Firestore functions globally
+        window.firebase = { doc, getDoc, updateDoc, serverTimestamp };
+        window.db = db; // Make db globally accessible
+        
+    </script>
+    
+    <style>
+        body { font-family: 'Montserrat', sans-serif; text-align: center; padding: 50px; background-color: #f7f9fc; color: #333; }
+        .spinner { border: 8px solid #f3f3f3; border-top: 8px solid #0047ab; border-radius: 50%; width: 60px; height: 60px; animation: spin 2s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .message { font-size: 1.2em; margin-top: 30px; font-weight: 500;}
+        .message.success { color: #28a745; }
+        .message.error { color: #dc3545; }
+        .logo { font-size: 30px; font-weight: 700; color: #0047ab; margin-bottom: 20px; }
+        .logo i { color: #ffd700; }
+        #details { font-size: 0.9em; color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="logo"><i class="fas fa-envelope"></i> Jobletters.xyz</div>
+    <div id="spinner" class="spinner"></div>
+    <p class="message" id="verificationMessage">Verifying your payment securely... Do not close this window.</p>
+    <p id="details"></p>
+
+    <script>
         const STORAGE_PREFIX = 'jobletters_';
+        // These flags help pass state back to index.html
         const SESSION_PAID_FLAG = 'verified_doc_id'; 
         const PENDING_DOC_ID = 'pendingDocId';
 
@@ -43,8 +69,8 @@
         async function verifyPayment() {
             const params = getUrlParams();
             const tx_ref = params.tx_ref; 
-            // Flutterwave passes 'status=successful' on a good transaction.
             const status = params.status; 
+            const transaction_id = params.transaction_id; // Flutterwave often includes this too
             
             // Get the document ID saved right before redirection
             const docIdFromStorage = localStorage.getItem(STORAGE_PREFIX + PENDING_DOC_ID);
@@ -53,76 +79,90 @@
             const spinnerElement = document.getElementById('spinner');
 
             messageElement.textContent = `Processing transaction ${tx_ref || '...'}`;
+            document.getElementById('details').textContent = `Status: ${status || 'N/A'}`;
+            
+            console.log("Payment Success Page - Received Params:", params);
+            console.log("Retrieved pendingDocId from localStorage:", docIdFromStorage);
 
-            // 1. Basic check
-            if (status !== 'successful' || !tx_ref || !docIdFromStorage) {
-                console.error("Missing/Failed transaction details or local doc ID.");
-                messageElement.innerHTML = `❌ Payment failed or details missing. Status: ${status || 'N/A'}. Redirecting in 5s.`;
+            // 1. Basic Status Check (Accept 'successful' or 'completed')
+            if ((status !== 'successful' && status !== 'completed') || !tx_ref || !docIdFromStorage) {
+                console.error("Missing/Failed transaction details or local doc ID.", { status, tx_ref, docIdFromStorage });
+                messageElement.innerHTML = `❌ Payment failed or details missing. Status: ${status || 'N/A'}. Redirecting home in 5s.`;
+                messageElement.className = "message error";
                 spinnerElement.style.display = 'none';
-                // Wait 5 seconds then redirect home
                 setTimeout(() => window.location.href = "/index.html", 5000); 
                 return;
             }
 
-            // 2. Mock Server-Side Verification (CRITICAL STEP)
-            // IN A REAL PRODUCTION APP: 
-            // You MUST send tx_ref and the expected amount to a secure **BACKEND** endpoint 
-            // (like a Firebase Function or API route) to query Flutterwave's API 
-            // (using your SECRET KEY) and verify the payment. 
-            // Updating Firestore directly from the client is **NOT SECURE** as it can still be exploited.
-            
-            // For this client-side JS/Firestore structure, we proceed with the update.
+            // 2. Verify Transaction Reference matches the stored Document ID
+            if (tx_ref !== docIdFromStorage) {
+                console.error("Transaction reference mismatch!", { tx_ref, docIdFromStorage });
+                messageElement.innerHTML = `❌ Transaction reference mismatch. Security check failed. Redirecting home in 5s.`;
+                messageElement.className = "message error";
+                spinnerElement.style.display = 'none';
+                setTimeout(() => window.location.href = "/index.html", 5000); 
+                return;
+            }
+
+            // 3. Update Firestore (Client-side, insecure for production)
             try {
-                const docRef = doc(db, "documents", docIdFromStorage);
+                // Ensure Firebase is ready
+                if (!window.db || !window.firebase) {
+                    throw new Error("Firestore not initialized on success page.");
+                }
+                const { doc, getDoc, updateDoc, serverTimestamp } = window.firebase;
+
+                const docRef = doc(window.db, "documents", docIdFromStorage);
                 
-                // Get the document to ensure it hasn't been paid for already
+                // Check if document exists before trying to update
                 const docSnap = await getDoc(docRef);
-                if (docSnap.exists() && docSnap.data().isPaid) {
-                     messageElement.innerHTML = `✅ Document already verified! Redirecting to index...`;
+                if (!docSnap.exists()) {
+                     throw new Error(`Document with ID ${docIdFromStorage} not found in Firestore.`);
+                }
+
+                if (docSnap.data().isPaid) {
+                     // Already paid, just redirect
+                     messageElement.innerHTML = `✅ Document already verified! Redirecting to your document...`;
+                     messageElement.className = "message success";
                 } else {
                      // Update the document to mark it as PAID
                      await updateDoc(docRef, {
                          isPaid: true,
-                         txRef: tx_ref,
+                         txRef: tx_ref, // Save the transaction ref from Flutterwave
+                         flutterwaveTransactionId: transaction_id || null, // Save Flutterwave's ID too if available
                          paidAt: serverTimestamp(),
-                         status: 'verified_success'
+                         status: `verified_${status}` // Store the actual status returned
                      });
                      messageElement.innerHTML = `✅ Payment verified successfully! Document unlocked. Redirecting in 3s.`;
+                     messageElement.className = "message success";
                 }
                 
-                // 3. Clean up storage and redirect back to the main app with the verified docId
+                // 4. Clean up storage and prepare redirect
                 localStorage.removeItem(STORAGE_PREFIX + PENDING_DOC_ID); 
-                // Set the session flag in case the URL parameter gets lost
-                sessionStorage.setItem(SESSION_PAID_FLAG, docIdFromStorage);
+                // Set session flag (backup if URL param is lost)
+                sessionStorage.setItem(SESSION_PAID_FLAG, docIdFromStorage); 
 
-                // Redirect to index.html with the verified docId to unlock content
+                // Redirect back to index.html with the verified docId
                 setTimeout(() => {
                     window.location.href = `/index.html?docId=${docIdFromStorage}`;
                 }, 3000);
 
             } catch (e) {
                 console.error("Error updating Firestore or verifying payment:", e);
-                messageElement.innerHTML = `❌ Error verifying payment with the system. Contact support with Transaction ID: ${tx_ref}. Redirecting in 5s.`;
+                messageElement.innerHTML = `❌ Error verifying payment with the system. Contact support with Transaction ID: ${tx_ref}. Redirecting home in 5s. Error: ${e.message}`;
+                messageElement.className = "message error";
                 spinnerElement.style.display = 'none';
                 setTimeout(() => window.location.href = "/index.html", 5000);
+            } finally {
+                 spinnerElement.style.display = 'none'; // Hide spinner after processing
             }
         }
 
-        window.addEventListener('load', verifyPayment);
+        // Run verification logic after Firebase has initialized
+        window.addEventListener('load', () => {
+             // Delay slightly to ensure Firebase module script runs
+             setTimeout(verifyPayment, 500); 
+        });
     </script>
-    
-    <style>
-        body { font-family: 'Montserrat', sans-serif; text-align: center; padding: 50px; background-color: #f7f9fc; color: #333; }
-        .spinner { border: 8px solid #f3f3f3; border-top: 8px solid #0047ab; border-radius: 50%; width: 60px; height: 60px; animation: spin 2s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .message { font-size: 1.2em; margin-top: 30px; }
-        .logo { font-size: 30px; font-weight: 700; color: #0047ab; }
-        .logo i { color: #ffd700; }
-    </style>
-</head>
-<body>
-    <div class="logo"><i class="fas fa-envelope"></i> Jobletters.xyz</div>
-    <div id="spinner" class="spinner"></div>
-    <p class="message" id="verificationMessage">Verifying your payment securely... Do not close this window.</p>
 </body>
 </html>
