@@ -833,7 +833,7 @@ The letter should be humble, respectful, and clearly state the request and the s
             const messages = createAIPrompt(docType, data); // Uses new function
             
             try {
-                const response = await fetch('https://api.openai.com/v1/completions', { // <-- Chat Endpoint
+                const response = await fetch('https://api.openai.com/v1/chat/completions', { // <-- Chat Endpoint
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
