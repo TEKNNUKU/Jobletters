@@ -15,6 +15,15 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0047ab">
 
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-TR8CQ7EP54"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-TR8CQ7EP54');
+    </script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
@@ -466,6 +475,60 @@
         let generatedDocumentText = "";
         let isPaid = false; 
         let currentDocId = null; 
+
+        // ============================================
+        // TRACKING SYSTEM - CAPTURE SOURCE ON LOAD
+        // ============================================
+        function captureTrafficSource() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sourceParam = urlParams.get('src');
+            
+            if (sourceParam) {
+                localStorage.setItem('traffic_source', sourceParam);
+                console.log('✅ Traffic source captured:', sourceParam);
+            }
+            
+            // If no source yet, default to 'direct'
+            if (!localStorage.getItem('traffic_source')) {
+                localStorage.setItem('traffic_source', 'direct');
+            }
+        }
+
+        // ============================================
+        // TRACKING FUNCTION - FIRESTORE + GA4
+        // ============================================
+        async function trackEvent(eventType, amount = 0) {
+            const source = localStorage.getItem('traffic_source') || 'unknown';
+            
+            console.log(`📊 Tracking: ${eventType} | Source: ${source} | Amount: ${amount}`);
+            
+            // 1. GOOGLE ANALYTICS 4 TRACKING
+            if (typeof gtag !== 'undefined') {
+                gtag('event', eventType, {
+                    'source': source,
+                    'value': amount,
+                    'currency': 'NGN'
+                });
+            }
+            
+            // 2. FIRESTORE DATABASE TRACKING
+            if (window.db && window.firebase) {
+                try {
+                    const { collection, addDoc, serverTimestamp } = window.firebase;
+                    await addDoc(collection(window.db, "tracking_events"), {
+                        source: source,
+                        event_type: eventType,
+                        payment_amount: amount,
+                        timestamp: serverTimestamp(),
+                        user_agent: navigator.userAgent,
+                        page_url: window.location.href
+                    });
+                    console.log('✅ Event tracked in Firestore');
+                } catch (error) {
+                    console.error('❌ Firestore tracking error:', error);
+                }
+            }
+        }
 
         // --- PWA Service Worker Registration (Unchanged) ---
         if ('serviceWorker' in navigator) {
