@@ -56,7 +56,7 @@
       
       // Expose Firestore methods globally for the main script
       window.firebase = { 
-          doc, getDoc, setDoc, updateDoc, 
+          collection, doc, addDoc, getDoc, setDoc, updateDoc, 
           serverTimestamp, increment 
       };
     </script>
@@ -479,18 +479,41 @@
         // ============================================
         // TRACKING SYSTEM - CAPTURE SOURCE ON LOAD
         // ============================================
+
         function captureTrafficSource() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const sourceParam = urlParams.get('src');
-            
-            if (sourceParam) {
-                localStorage.setItem('traffic_source', sourceParam);
-                console.log('✅ Traffic source captured:', sourceParam);
-            }
-            
-            // If no source yet, default to 'direct'
-            if (!localStorage.getItem('traffic_source')) {
+            try {
+                // Get the full query string
+                const queryString = window.location.search;
+                console.log('📍 Full query string:', queryString);
+                
+                // Parse URL parameters
+                const urlParams = new URLSearchParams(queryString);
+                const sourceParam = urlParams.get('src');
+                
+                console.log('📍 Source parameter found:', sourceParam);
+                
+                if (sourceParam && sourceParam.trim() !== '') {
+                    localStorage.setItem('traffic_source', sourceParam);
+                    console.log('✅ Traffic source captured:', sourceParam);
+                    return sourceParam;
+                }
+                
+                // Check if we already have a source stored
+                const existingSource = localStorage.getItem('traffic_source');
+                if (existingSource) {
+                    console.log('📦 Using existing source:', existingSource);
+                    return existingSource;
+                }
+                
+                // If no source yet, default to 'direct'
                 localStorage.setItem('traffic_source', 'direct');
+                console.log('📍 No source parameter, set to: direct');
+                return 'direct';
+                
+            } catch (error) {
+                console.error('❌ Error capturing traffic source:', error);
+                localStorage.setItem('traffic_source', 'direct');
+                return 'direct';
             }
         }
 
@@ -529,7 +552,7 @@
                 }
             }
         }
-
+        
         // --- PWA Service Worker Registration (Unchanged) ---
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
@@ -664,6 +687,15 @@
          * Initializes the app by fetching settings from Firestore and checking payment status.
          */
         async function initApp() {
+            console.log('🚀 App initializing...');
+            
+            // Capture traffic source FIRST (before anything else)
+            const source = captureTrafficSource();
+            console.log('📊 Active traffic source:', source);
+            
+            // Track page view
+            await trackEvent('page_view');
+            
             // Ensure default mock API key is set if Firestore fails
             if (!localStorage.getItem(STORAGE_PREFIX + 'api_key')) {
                 localStorage.setItem(STORAGE_PREFIX + 'api_key', DEFAULT_MOCK_API_KEY);
@@ -709,7 +741,9 @@
 
             // Crucial Check for payment confirmation immediately on page load
             await checkSessionPayment();
-        };
+
+            console.log('✅ App initialization complete');
+        }
 
         window.addEventListener('load', () => {
              // Delay to ensure Firebase SDK loads
@@ -787,6 +821,9 @@
             } else {
                  generatedDocumentText = await callAIGenerator(currentDocumentType, data, adminKey);
             }
+
+            // TRACK DOCUMENT GENERATION
+            await trackEvent('doc_generated');
             
             // 1. Save the generated draft to Firestore (This MUST succeed before payment)
             currentDocId = await saveDocumentDraft(currentDocumentType, data, generatedDocumentText);
@@ -1097,6 +1134,7 @@ ${data.name}`;
                 'customer[name]': userName,
                 'meta[docId]': currentDocId, // Pass doc ID in meta if needed
                 'meta[docType]': currentDocumentType
+                'meta[source]': localStorage.getItem('traffic_source') || 'unknown'
             };
 
             for (const key in fields) {
@@ -1209,6 +1247,10 @@ ${data.name}`;
                  showModal("❌ Please complete payment to download the final document.", true);
                  return;
             }
+
+            // TRACK DOWNLOAD
+            await trackEvent('document_downloaded');
+            
             showModal("📄 Generating PDF...");
             
             const { jsPDF } = window.jspdf;
