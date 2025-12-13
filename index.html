@@ -56,9 +56,19 @@
       
       // Expose Firestore methods globally for the main script
       window.firebase = { 
-          collection, doc, addDoc, getDoc, setDoc, updateDoc, 
-          serverTimestamp, increment 
+          collection, 
+          doc, 
+          addDoc, 
+          getDoc, 
+          setDoc, 
+          updateDoc, 
+          serverTimestamp, 
+          increment 
       };
+      
+      // Set flag when Firebase is ready
+      window.firebaseReady = true;
+      console.log('✅ Firebase initialized and ready');
     </script>
 
     <style>
@@ -527,15 +537,20 @@
             
             // 1. GOOGLE ANALYTICS 4 TRACKING
             if (typeof gtag !== 'undefined') {
-                gtag('event', eventType, {
-                    'source': source,
-                    'value': amount,
-                    'currency': 'NGN'
-                });
+                try {
+                    gtag('event', eventType, {
+                        'source': source,
+                        'value': amount,
+                        'currency': 'NGN'
+                    });
+                    console.log('✅ GA4 event tracked');
+                } catch (error) {
+                    console.error('❌ GA4 tracking error:', error);
+                }
             }
             
             // 2. FIRESTORE DATABASE TRACKING
-            if (window.db && window.firebase) {
+            if (window.db && window.firebase && window.firebaseReady) {
                 try {
                     const { collection, addDoc, serverTimestamp } = window.firebase;
                     await addDoc(collection(window.db, "tracking_events"), {
@@ -550,6 +565,8 @@
                 } catch (error) {
                     console.error('❌ Firestore tracking error:', error);
                 }
+            } else {
+                console.warn('⚠️ Firestore not ready, event not tracked:', eventType);
             }
         }
         
@@ -746,8 +763,23 @@
         }
 
         window.addEventListener('load', () => {
-             // Delay to ensure Firebase SDK loads
-             setTimeout(initApp, 500); 
+             // Wait for Firebase to be ready before initializing
+             const waitForFirebase = setInterval(() => {
+                 if (window.firebaseReady) {
+                     clearInterval(waitForFirebase);
+                     console.log('🔥 Firebase ready, initializing app...');
+                     initApp();
+                 }
+             }, 100); // Check every 100ms
+             
+             // Timeout after 5 seconds
+             setTimeout(() => {
+                 clearInterval(waitForFirebase);
+                 if (!window.firebaseReady) {
+                     console.warn('⚠️ Firebase timeout, initializing anyway...');
+                     initApp();
+                 }
+             }, 5000);
         });
 
         // --- Form Display Logic (Unchanged) ---
@@ -849,7 +881,6 @@
                      incrementMetric('generations'); // Fallback
                 }
             }
-
 
             // 3. Display Results
             document.getElementById('letter').textContent = generatedDocumentText;
@@ -1105,6 +1136,9 @@ ${data.name}`;
                 showModal("⚠️ Please generate a document first!", true);
                 return;
             }
+
+            // TRACK PAYMENT INITIATION
+            await trackEvent('payment_initiated');
 
             // 1. Store the pending document ID so the success page knows which document to look for
             localStorage.setItem(STORAGE_PREFIX + PENDING_DOC_ID, currentDocId);
