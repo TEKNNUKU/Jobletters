@@ -269,13 +269,20 @@
                     <h3>Résumé / CV Details</h3>
                     <label for="fullName">Full Name *</label>
                     <input type="text" id="fullName" placeholder="Jane Doe" required />
+                    
+                    <label for="jobTitle">Current/Target Job Title *</label>
+                    <input type="text" id="jobTitle" placeholder="e.g. Senior Software Engineer" required />
+                    
                     <label for="email">Email Address *</label>
                     <input type="email" id="email" placeholder="janedoe@example.com" required />
+                    
+                    <label for="phone">Phone Number *</label>
+                    <input type="text" id="phone" placeholder="e.g. +234 800 123 4567" required />
                     
                     <div style="margin-top: 10px; display: flex; align-items: center;">
                         <input type="checkbox" id="saveDataCheckbox" style="width: auto; margin: 0 10px 0 0;" />
                         <label for="saveDataCheckbox" style="margin: 0; display: inline-block; font-weight: 400;">
-                            <i class="fas fa-save" style="color: var(--primary);"></i> Save my name and email for next time.
+                            <i class="fas fa-save" style="color: var(--primary);"></i> Save my details for next time.
                         </label>
                     </div>
 
@@ -727,7 +734,9 @@
                 if (localStorage.getItem(STORAGE_PREFIX + 'saveDataCheckbox') === 'true') {
                     document.getElementById('saveDataCheckbox').checked = true;
                     document.getElementById('fullName').value = localStorage.getItem(STORAGE_PREFIX + 'fullName') || '';
+                    document.getElementById('jobTitle').value = localStorage.getItem(STORAGE_PREFIX + 'jobTitle') || '';
                     document.getElementById('email').value = localStorage.getItem(STORAGE_PREFIX + 'email') || '';
+                    document.getElementById('phone').value = localStorage.getItem(STORAGE_PREFIX + 'phone') || '';
                 }
             }
         }
@@ -736,11 +745,15 @@
             if (document.getElementById('saveDataCheckbox')?.checked) {
                 localStorage.setItem(STORAGE_PREFIX + 'saveDataCheckbox', 'true');
                 localStorage.setItem(STORAGE_PREFIX + 'fullName', data.name);
+                localStorage.setItem(STORAGE_PREFIX + 'jobTitle', data.jobTitle || '');
                 localStorage.setItem(STORAGE_PREFIX + 'email', data.email);
+                localStorage.setItem(STORAGE_PREFIX + 'phone', data.phone || '');
             } else {
                 localStorage.removeItem(STORAGE_PREFIX + 'saveDataCheckbox');
                 localStorage.removeItem(STORAGE_PREFIX + 'fullName');
+                localStorage.removeItem(STORAGE_PREFIX + 'jobTitle');
                 localStorage.removeItem(STORAGE_PREFIX + 'email');
+                localStorage.removeItem(STORAGE_PREFIX + 'phone');
             }
         }
 
@@ -942,19 +955,20 @@
                 userPrompt = `Create an exceptional professional resume for the following candidate. This resume must be ATS-optimized and formatted for maximum impact.
 
 Full Name: ${data.name}
+Target Position: ${data.jobTitle}
 Email: ${data.email}
+Phone: ${data.phone}
 Work Experience: ${data.experience}
 Education: ${data.education}
 Skills: ${data.skills}
 
 Structure the resume with these sections in order:
-1. Contact header with name, email, phone placeholder
-2. Professional Summary paragraph highlighting key strengths
-3. Core Competencies or Skills section
-4. Professional Experience with quantified achievements
-5. Education section
+1. Professional Summary paragraph tailored to the ${data.jobTitle} role, highlighting key strengths
+2. Core Competencies or Skills section
+3. Professional Experience with quantified achievements relevant to ${data.jobTitle}
+4. Education section
 
-Write in active voice with strong action verbs. Each achievement should demonstrate measurable impact. Keep formatting clean and professional.`;
+Write in active voice with strong action verbs. Each achievement should demonstrate measurable impact. Focus on skills and experiences most relevant to a ${data.jobTitle} position. Keep formatting clean and professional.`;
             }
 
             else if (docType === "coverLetter") {
@@ -1281,7 +1295,9 @@ Note: This is a demonstration draft. Configure your OpenAI API key in admin pane
             if (docType === 'resume') {
                 return {
                     name: document.getElementById('fullName').value,
+                    jobTitle: document.getElementById('jobTitle').value,
                     email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
                     experience: document.getElementById('experience').value,
                     education: document.getElementById('education').value,
                     skills: document.getElementById('skills').value,
@@ -1324,18 +1340,27 @@ Note: This is a demonstration draft. Configure your OpenAI API key in admin pane
         
         function validateForm(docType) { 
             if (docType === "resume") {
-                return document.getElementById('fullName').value && document.getElementById('email').value && 
-                       document.getElementById('experience').value && document.getElementById('education').value && 
+                return document.getElementById('fullName').value && 
+                       document.getElementById('jobTitle').value &&
+                       document.getElementById('email').value && 
+                       document.getElementById('phone').value &&
+                       document.getElementById('experience').value && 
+                       document.getElementById('education').value && 
                        document.getElementById('skills').value;
             } else if (docType === "coverLetter") {
-                return document.getElementById('cl_fullName').value && document.getElementById('cl_jobTitle').value && 
-                       document.getElementById('cl_companyName').value && document.getElementById('cl_experience').value;
+                return document.getElementById('cl_fullName').value && 
+                       document.getElementById('cl_jobTitle').value && 
+                       document.getElementById('cl_companyName').value && 
+                       document.getElementById('cl_experience').value;
             } else if (docType === "resignation") {
-                return document.getElementById('rl_fullName').value && document.getElementById('rl_position').value && 
+                return document.getElementById('rl_fullName').value && 
+                       document.getElementById('rl_position').value && 
                        document.getElementById('rl_lastDay').value;
             } else if (docType === "academic") {
-                return document.getElementById('ac_fullName').value && document.getElementById('ac_matricNumber').value && 
-                       document.getElementById('ac_purpose').value && document.getElementById('ac_details').value;
+                return document.getElementById('ac_fullName').value && 
+                       document.getElementById('ac_matricNumber').value && 
+                       document.getElementById('ac_purpose').value && 
+                       document.getElementById('ac_details').value;
             }
             return true; 
         }
@@ -1350,14 +1375,13 @@ Note: This is a demonstration draft. Configure your OpenAI API key in admin pane
             
             showModal("📄 Generating professional PDF...");
             
-            // Get user data directly from form
+            // Get ACTUAL user data from form
             const userData = collectFormData(currentDocumentType);
             
-            // Create a simple, well-formatted PDF
             const docTypeDisplay = document.getElementById('documentType').options[document.getElementById('documentType').selectedIndex].text;
             const filename = `${docTypeDisplay.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.pdf`;
 
-            // Create properly formatted HTML for PDF
+            // Create properly formatted PDF with REAL user data
             const pdfContent = `
             <html>
             <head>
@@ -1368,42 +1392,49 @@ Note: This is a demonstration draft. Configure your OpenAI API key in admin pane
                         font-family: Arial, Helvetica, sans-serif; 
                         font-size: 11pt; 
                         line-height: 1.6; 
-                        color: #333;
+                        color: #222;
                         margin: 0;
-                        padding: 20px;
+                        padding: 0;
+                    }
+                    .header {
+                        border-bottom: 4px solid #0047ab;
+                        padding-bottom: 15px;
+                        margin-bottom: 25px;
                     }
                     h1 { 
-                        font-size: 24pt; 
-                        margin: 0 0 5px 0; 
+                        font-size: 26pt; 
+                        margin: 0 0 8px 0; 
                         color: #0047ab;
-                        border-bottom: 3px solid #0047ab;
-                        padding-bottom: 10px;
+                        font-weight: bold;
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
+                    }
+                    .job-title {
+                        font-size: 13pt;
+                        color: #555;
+                        margin: 0 0 10px 0;
+                        font-weight: 600;
                     }
                     .contact { 
                         font-size: 10pt; 
                         color: #666; 
-                        margin-bottom: 25px;
+                        margin: 0;
+                        line-height: 1.4;
                     }
-                    .section { 
-                        margin-bottom: 20px; 
+                    .content { 
+                        white-space: pre-wrap;
+                        line-height: 1.7;
+                        color: #333;
                     }
-                    .section-title {
-                        font-size: 13pt;
-                        font-weight: bold;
-                        color: #0047ab;
-                        margin: 15px 0 8px 0;
-                        text-transform: uppercase;
-                        border-bottom: 2px solid #ddd;
-                        padding-bottom: 3px;
-                    }
-                    p { margin: 8px 0; }
-                    .content { white-space: pre-wrap; }
                 </style>
             </head>
             <body>
-                <h1>${userData.name || 'Professional Name'}</h1>
-                <div class="contact">
-                    ${userData.email || 'email@example.com'} | Phone: (555) 000-0000
+                <div class="header">
+                    <h1>${userData.name}</h1>
+                    ${userData.jobTitle ? `<div class="job-title">${userData.jobTitle}</div>` : ''}
+                    <div class="contact">
+                        ${userData.email}${userData.phone ? ' | ' + userData.phone : ''}
+                    </div>
                 </div>
                 <div class="content">${generatedDocumentText}</div>
             </body>
