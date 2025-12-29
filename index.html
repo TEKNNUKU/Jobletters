@@ -1348,36 +1348,86 @@ Note: This is a demonstration draft. Configure your OpenAI API key in admin pane
 
             await trackEvent('document_downloaded');
             
-            showModal("📄 Generating professional PDF with your selected template...");
+            showModal("📄 Generating professional PDF...");
             
-            const selectedTemplate = localStorage.getItem('selected_template') || 'modern-blue';
-            const formattedHTML = createTemplateHTML(generatedDocumentText, selectedTemplate);
+            // Get user data directly from form
+            const userData = collectFormData(currentDocumentType);
             
+            // Create a simple, well-formatted PDF
             const docTypeDisplay = document.getElementById('documentType').options[document.getElementById('documentType').selectedIndex].text;
             const filename = `${docTypeDisplay.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.pdf`;
 
+            // Create properly formatted HTML for PDF
+            const pdfContent = `
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    @page { margin: 0.75in; }
+                    body { 
+                        font-family: Arial, Helvetica, sans-serif; 
+                        font-size: 11pt; 
+                        line-height: 1.6; 
+                        color: #333;
+                        margin: 0;
+                        padding: 20px;
+                    }
+                    h1 { 
+                        font-size: 24pt; 
+                        margin: 0 0 5px 0; 
+                        color: #0047ab;
+                        border-bottom: 3px solid #0047ab;
+                        padding-bottom: 10px;
+                    }
+                    .contact { 
+                        font-size: 10pt; 
+                        color: #666; 
+                        margin-bottom: 25px;
+                    }
+                    .section { 
+                        margin-bottom: 20px; 
+                    }
+                    .section-title {
+                        font-size: 13pt;
+                        font-weight: bold;
+                        color: #0047ab;
+                        margin: 15px 0 8px 0;
+                        text-transform: uppercase;
+                        border-bottom: 2px solid #ddd;
+                        padding-bottom: 3px;
+                    }
+                    p { margin: 8px 0; }
+                    .content { white-space: pre-wrap; }
+                </style>
+            </head>
+            <body>
+                <h1>${userData.name || 'Professional Name'}</h1>
+                <div class="contact">
+                    ${userData.email || 'email@example.com'} | Phone: (555) 000-0000
+                </div>
+                <div class="content">${generatedDocumentText}</div>
+            </body>
+            </html>`;
+
             const opt = {
-                margin: [0.5, 0.5, 0.5, 0.5],
+                margin: 0,
                 filename: filename,
-                image: { type: 'jpeg', quality: 0.95 },
+                image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
                     scale: 2,
                     useCORS: true,
                     logging: false,
-                    letterRendering: true,
-                    allowTaint: true
+                    letterRendering: true
                 },
                 jsPDF: { 
                     unit: 'in', 
                     format: 'letter', 
-                    orientation: 'portrait',
-                    compress: true
-                },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                    orientation: 'portrait'
+                }
             };
             
             try {
-                await html2pdf().set(opt).from(formattedHTML).save();
+                await html2pdf().set(opt).from(pdfContent).save();
                 showModal("✅ Professional PDF downloaded successfully!");
             } catch (error) {
                 console.error("PDF generation error:", error);
