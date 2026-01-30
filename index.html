@@ -221,6 +221,17 @@
             #preview-section { padding: 0 !important; margin: 0 !important; box-shadow: none !important; background: white !important; }
             #letter { max-height: none !important; overflow: visible !important; border: none !important; padding: 1in !important; user-select: text !important; font-family: 'Times New Roman', serif; font-size: 12pt; white-space: pre-wrap; }
         }
+        
+        @media print, screen and (max-resolution: 300dpi) {
+            .pdf-template {
+                box-shadow: none !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            table { page-break-inside: avoid; }
+            h1, h2, h3 { page-break-after: avoid; }
+        }
     </style>
 </head>
 <body>
@@ -497,6 +508,118 @@
             event.target.closest('.template-card').classList.add('selected');
             
             showModal(`✅ Template "${templateName}" selected!`);
+        }
+
+        function createTemplateHTML(content, template) {
+            const data = collectFormData(currentDocumentType);
+            const phone = "(555) 000-0000";
+            const address = "City, State";
+            
+            // Clean and properly format content
+            const cleanContent = content.replace(/\n\n/g, '<br/><br/>').replace(/\n/g, '<br/>');
+            
+            if (template === 'modern-blue') {
+                return `
+                <div style="font-family: Arial, Helvetica, sans-serif; width: 100%; max-width: 800px; margin: 0 auto; padding: 0; background: white;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                        <tr>
+                            <td style="background: #667eea; color: white; padding: 40px 30px;">
+                                <h1 style="margin: 0 0 10px 0; font-size: 36px; font-weight: bold;">${data.name || 'Professional Name'}</h1>
+                                <p style="margin: 0; font-size: 14px;">${data.email || 'email@example.com'} | ${phone}</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 40px 30px; line-height: 1.6; font-size: 11pt; color: #333;">
+                                ${cleanContent}
+                            </td>
+                        </tr>
+                    </table>
+                </div>`;
+            }
+            
+            if (template === 'classic') {
+                return `
+                <div style="font-family: 'Times New Roman', Georgia, serif; width: 100%; max-width: 800px; margin: 0 auto; padding: 40px 30px; background: white;">
+                    <div style="text-align: center; border-bottom: 3px double #333; padding-bottom: 20px; margin-bottom: 30px;">
+                        <h1 style="margin: 0 0 10px 0; font-size: 28px; text-transform: uppercase; letter-spacing: 2px;">${data.name || 'Professional Name'}</h1>
+                        <p style="margin: 0; color: #555; font-size: 12px;">${data.email || 'email@example.com'} | ${phone} | ${address}</p>
+                    </div>
+                    <div style="line-height: 1.8; font-size: 11pt; color: #222;">
+                        ${cleanContent}
+                    </div>
+                </div>`;
+            }
+            
+            if (template === 'creative-teal') {
+                return `
+                <div style="font-family: Arial, sans-serif; width: 100%; max-width: 800px; margin: 0 auto; background: white;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                        <tr>
+                            <td width="30%" valign="top" style="background: #20B2AA; color: white; padding: 40px 20px;">
+                                <h2 style="margin: 0 0 5px 0; font-size: 28px; font-weight: bold;">${data.name?.split(' ')[0] || 'First'}</h2>
+                                <h3 style="margin: 0 0 30px 0; font-size: 20px; font-weight: 300;">${data.name?.split(' ').slice(1).join(' ') || 'Last'}</h3>
+                                <div style="font-size: 10pt; line-height: 1.6;">
+                                    <p style="margin: 0 0 5px 0; font-weight: bold; font-size: 11pt;">CONTACT</p>
+                                    <p style="margin: 3px 0; font-size: 9pt;">${data.email || 'email@example.com'}</p>
+                                    <p style="margin: 3px 0; font-size: 9pt;">${phone}</p>
+                                    <p style="margin: 3px 0; font-size: 9pt;">${address}</p>
+                                </div>
+                            </td>
+                            <td width="70%" valign="top" style="padding: 40px 30px; background: white;">
+                                <div style="line-height: 1.6; font-size: 10pt; color: #333;">
+                                    ${cleanContent}
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>`;
+            }
+            
+            if (template === 'minimal') {
+                return `
+                <div style="font-family: Helvetica, Arial, sans-serif; width: 100%; max-width: 800px; margin: 0 auto; padding: 40px 30px; background: white;">
+                    <div style="margin-bottom: 40px;">
+                        <h1 style="margin: 0 0 5px 0; font-size: 32px; font-weight: 300; color: #2c3e50;">${data.name || 'Professional Name'}</h1>
+                        <div style="height: 2px; width: 50px; background: #3498db; margin: 12px 0 15px 0;"></div>
+                        <p style="margin: 0; color: #7f8c8d; font-size: 11px; line-height: 1.5;">
+                            ${data.email || 'email@example.com'} | ${phone} | ${address}
+                        </p>
+                    </div>
+                    <div style="line-height: 1.7; font-size: 11pt; color: #34495e;">
+                        ${cleanContent}
+                    </div>
+                </div>`;
+            }
+            
+            if (template === 'executive') {
+                return `
+                <div style="font-family: Calibri, Arial, sans-serif; width: 100%; max-width: 800px; margin: 0 auto; background: white;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                        <tr>
+                            <td style="background: #1a1a1a; color: white; padding: 50px 30px;">
+                                <h1 style="margin: 0 0 15px 0; font-size: 38px; font-weight: bold;">${data.name || 'Professional Name'}</h1>
+                                <div style="height: 3px; width: 70px; background: #ffd700; margin-bottom: 15px;"></div>
+                                <p style="margin: 0; font-size: 13px; letter-spacing: 0.5px;">
+                                    ${data.email || 'email@example.com'} • ${phone} • ${address}
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 40px 30px; line-height: 1.7; font-size: 11pt; color: #333;">
+                                ${cleanContent}
+                            </td>
+                        </tr>
+                    </table>
+                </div>`;
+            }
+            
+            // Default simple template
+            return `
+            <div style="font-family: Arial, sans-serif; width: 100%; max-width: 800px; margin: 0 auto; padding: 40px 30px; background: white; line-height: 1.7; font-size: 11pt;">
+                <h1 style="font-size: 28px; margin-bottom: 10px;">${data.name || 'Professional Name'}</h1>
+                <p style="margin-bottom: 30px; color: #666;">${data.email || 'email@example.com'} | ${phone}</p>
+                <div>${cleanContent}</div>
+            </div>`;
         }
 
         async function trackEvent(eventType, amount = 0) {
@@ -1180,6 +1303,7 @@ Note: This is a demonstration draft. Configure your OpenAI API key in admin pane
             }
         }
 
+        // FIXED: Universal data collector that works for ALL document types
         function collectFormData(docType) {
             const data = {};
             
@@ -1322,7 +1446,7 @@ The text must be crystal clear and perfectly legible with professional formattin
                         model: "dall-e-3",
                         prompt: imagePrompt,
                         n: 1,
-                        size: "1024x1792", // Closest to 8.5x11 ratio (0.472 vs 0.570)
+                        size: "1024x1792", // Closest to 8.5x11 ratio
                         quality: "hd",
                         style: "natural"
                     })
@@ -1363,7 +1487,7 @@ The text must be crystal clear and perfectly legible with professional formattin
         async function fallbackHTMLtoImage(content, template, userData) {
             showModal("🎨 Creating professional document design...");
             
-            const htmlContent = createTemplateHTML(content, template, userData);
+            const htmlContent = createTemplateHTML(content, template);
             
             const tempDiv = document.createElement('div');
             tempDiv.style.position = 'absolute';
@@ -1393,65 +1517,6 @@ The text must be crystal clear and perfectly legible with professional formattin
                 console.error("Fallback image generation error:", error);
                 return null;
             }
-        }
-
-        // Create HTML template for fallback rendering
-        function createTemplateHTML(content, template, userData) {
-            const cleanContent = content.replace(/\n\n+/g, '<br><br>').replace(/\n/g, '<br>');
-            
-            const templates = {
-                'modern-blue': `
-                    <div style="font-family: Arial, sans-serif; width: 816px; height: 1056px; background: white; padding: 60px 50px; box-sizing: border-box;">
-                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 50px 40px; margin: -60px -50px 40px; border-radius: 0 0 20px 20px;">
-                            <h1 style="margin: 0 0 15px 0; font-size: 36pt; font-weight: bold;">${userData.name}</h1>
-                            <p style="margin: 0; font-size: 12pt;">${userData.email || 'email@example.com'} | ${userData.phone || '(555) 000-0000'}</p>
-                        </div>
-                        <div style="line-height: 1.8; font-size: 11pt; color: #333;">${cleanContent}</div>
-                    </div>`,
-                    
-                'classic': `
-                    <div style="font-family: 'Times New Roman', serif; width: 816px; height: 1056px; background: white; padding: 80px 70px; box-sizing: border-box;">
-                        <div style="text-align: center; border-bottom: 4px double #333; padding-bottom: 25px; margin-bottom: 40px;">
-                            <h1 style="margin: 0 0 15px 0; font-size: 28pt; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">${userData.name}</h1>
-                            <p style="margin: 0; color: #555; font-size: 11pt;">${userData.email || 'email@example.com'} | ${userData.phone || '(555) 000-0000'}</p>
-                        </div>
-                        <div style="line-height: 2; font-size: 11pt; color: #222;">${cleanContent}</div>
-                    </div>`,
-                    
-                'creative-teal': `
-                    <div style="font-family: Arial, sans-serif; width: 816px; height: 1056px; background: white; display: flex; box-sizing: border-box;">
-                        <div style="width: 280px; background: linear-gradient(135deg, #20B2AA 0%, #008B8B 100%); color: white; padding: 60px 30px;">
-                            <h2 style="margin: 0 0 10px 0; font-size: 28pt; font-weight: bold;">${userData.name?.split(' ')[0] || 'Name'}</h2>
-                            <h3 style="margin: 0 0 50px 0; font-size: 18pt; font-weight: 300;">${userData.name?.split(' ').slice(1).join(' ') || ''}</h3>
-                            <p style="font-size: 10pt; margin: 5px 0;"><strong>CONTACT</strong></p>
-                            <p style="font-size: 9pt; margin: 3px 0;">${userData.email || 'email@example.com'}</p>
-                            <p style="font-size: 9pt; margin: 3px 0;">${userData.phone || '(555) 000-0000'}</p>
-                        </div>
-                        <div style="flex: 1; padding: 60px 50px; line-height: 1.7; font-size: 10pt; color: #333;">${cleanContent}</div>
-                    </div>`,
-                    
-                'minimal': `
-                    <div style="font-family: Helvetica, Arial, sans-serif; width: 816px; height: 1056px; background: white; padding: 80px 70px; box-sizing: border-box;">
-                        <div style="margin-bottom: 60px;">
-                            <h1 style="margin: 0 0 10px 0; font-size: 34pt; font-weight: 300; color: #2c3e50;">${userData.name}</h1>
-                            <div style="height: 3px; width: 100px; background: #3498db; margin: 15px 0 20px;"></div>
-                            <p style="margin: 0; color: #7f8c8d; font-size: 10pt;">${userData.email || 'email@example.com'} | ${userData.phone || '(555) 000-0000'}</p>
-                        </div>
-                        <div style="line-height: 1.8; font-size: 11pt; color: #34495e;">${cleanContent}</div>
-                    </div>`,
-                    
-                'executive': `
-                    <div style="font-family: Calibri, Arial, sans-serif; width: 816px; height: 1056px; background: white; box-sizing: border-box;">
-                        <div style="background: #1a1a1a; color: white; padding: 80px 70px;">
-                            <h1 style="margin: 0 0 20px 0; font-size: 38pt; font-weight: bold;">${userData.name}</h1>
-                            <div style="height: 4px; width: 150px; background: #ffd700; margin-bottom: 20px;"></div>
-                            <p style="margin: 0; font-size: 12pt; letter-spacing: 1px;">${userData.email || 'email@example.com'} • ${userData.phone || '(555) 000-0000'}</p>
-                        </div>
-                        <div style="padding: 60px 70px; line-height: 1.8; font-size: 11pt; color: #333;">${cleanContent}</div>
-                    </div>`
-            };
-            
-            return templates[template] || templates['modern-blue'];
         }
 
         function incrementMetric(key, value = 1) {
