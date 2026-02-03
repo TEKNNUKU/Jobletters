@@ -744,7 +744,7 @@
 
         function createAIPrompt(docType, data) {
             const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-            let systemPrompt = "You are Jobletters.xyz, a world-class expert in creating flawless professional documents. Your output must be perfectly formatted, grammatically impeccable, and ready for immediate professional use. Write in clear, elegant prose without any markdown formatting, asterisks, or special characters. Use proper paragraph spacing with blank lines between sections. Never include explanatory notes or meta-commentary.";
+            let systemPrompt = "You are Jobletters.xyz, a world-class expert in creating flawless professional documents. Your output must be perfectly formatted, grammatically impeccable, and ready for immediate professional use. Write in clear, elegant prose without any markdown formatting, asterisks, or special characters. Use proper paragraph spacing with blank lines between sections. CRITICAL: Never include placeholder text like 'Professional Name', '[Your Name]', '[Company Name]', or any bracketed placeholders. Use only the actual information provided. Never include explanatory notes or meta-commentary. Do not repeat the person's name, email, or phone number in the body text as these appear in the document header.";
             let userPrompt = "";
 
             if (docType === "resume") {
@@ -758,13 +758,14 @@ Work Experience: ${data.experience}
 Education: ${data.education}
 Skills: ${data.skills}
 
-Structure the resume with these sections in order:
-1. Professional Summary paragraph tailored to the ${data.jobTitle} role
-2. Core Competencies or Skills section
-3. Professional Experience with quantified achievements
-4. Education section
-
-Write in active voice with strong action verbs.`;
+IMPORTANT FORMATTING RULES:
+- Do NOT include the candidate's name, email, or phone in the body text - these go in the header only
+- Do NOT write "Professional Name" or any placeholder text
+- Start directly with the Professional Summary section
+- Structure with these sections: Professional Summary, Core Competencies, Professional Experience, Education
+- Write in active voice with strong action verbs
+- Use actual company names, dates, and details from the experience provided
+- Each section header should be in Title Case (e.g., "Professional Summary" not "PROFESSIONAL SUMMARY")`;
             }
 
             else if (docType === "coverLetter") {
@@ -851,10 +852,7 @@ Use formal academic tone, clearly state the request, provide compelling justific
             const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
             
             if (docType === "resume") {
-                return `${data.name.toUpperCase()}
-${data.email} | ${data.phone}
-
-PROFESSIONAL SUMMARY
+                return `PROFESSIONAL SUMMARY
 
 Accomplished professional with demonstrated expertise in ${data.skills.split(',')[0].trim()}. Proven track record of driving results through strategic initiatives and collaborative team leadership.
 
@@ -1205,38 +1203,41 @@ ${data.matricNumber}`;
                 const firstName = nameParts[0] || '';
                 const lastName = nameParts.slice(1).join(' ') || '';
                 
+                let sidebarY = 30;
                 if (firstName) {
-                    pdf.text(firstName, 10, 30);
+                    pdf.text(firstName, 10, sidebarY);
+                    sidebarY += 10;
                 }
                 if (lastName) {
                     pdf.setFontSize(11);
                     pdf.setFont('helvetica', 'normal');
-                    pdf.text(lastName, 10, 40);
+                    pdf.text(lastName, 10, sidebarY);
+                    sidebarY += 15;
                 }
                 
                 // Only show CONTACT label if there's actual contact info
                 if (userData.email || userData.phone) {
                     pdf.setFontSize(8);
                     pdf.setFont('helvetica', 'bold');
-                    pdf.text('CONTACT', 10, 55);
+                    pdf.text('CONTACT', 10, sidebarY);
+                    sidebarY += 6;
                     pdf.setFont('helvetica', 'normal');
                     pdf.setFontSize(7);
-                    let contactY = 61;
                     if (userData.email) {
                         const emailLines = pdf.splitTextToSize(userData.email, 45);
                         emailLines.forEach(line => {
-                            pdf.text(line, 10, contactY);
-                            contactY += 5;
+                            pdf.text(line, 10, sidebarY);
+                            sidebarY += 5;
                         });
                     }
                     if (userData.phone) {
-                        pdf.text(userData.phone, 10, contactY);
+                        pdf.text(userData.phone, 10, sidebarY);
                     }
                 }
                 
                 margin = 68;
                 const contentWidth = pageWidth - margin - 15; // Leave 15mm margin on right
-                yPosition = 30;
+                yPosition = 25; // Start content higher to reduce empty space
                 pdf.setTextColor(51, 51, 51);
             }
             
@@ -1328,11 +1329,12 @@ ${data.matricNumber}`;
                 
                 if (yPosition > pageHeight - 30) {
                     pdf.addPage();
-                    yPosition = margin;
+                    yPosition = 25; // Start higher on new pages to reduce empty space
                     if (template === 'creative-teal') {
                         pdf.setFillColor(32, 178, 170);
                         pdf.rect(0, 0, 60, pageHeight, 'F');
                         contentMaxWidth = pageWidth - margin - 15;
+                        yPosition = 25; // Consistent starting position
                     }
                 }
                 
@@ -1349,7 +1351,7 @@ ${data.matricNumber}`;
                     headerLines.forEach(headerLine => {
                         if (yPosition > pageHeight - 30) {
                             pdf.addPage();
-                            yPosition = margin;
+                            yPosition = 25;
                             if (template === 'creative-teal') {
                                 pdf.setFillColor(32, 178, 170);
                                 pdf.rect(0, 0, 60, pageHeight, 'F');
@@ -1366,7 +1368,7 @@ ${data.matricNumber}`;
                     for (let j = 0; j < wrappedLines.length; j++) {
                         if (yPosition > pageHeight - 30) {
                             pdf.addPage();
-                            yPosition = margin;
+                            yPosition = 25;
                             if (template === 'creative-teal') {
                                 pdf.setFillColor(32, 178, 170);
                                 pdf.rect(0, 0, 60, pageHeight, 'F');
