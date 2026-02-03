@@ -1156,8 +1156,10 @@ ${data.matricNumber}`;
                 pdf.setFontSize(10);
                 pdf.setFont('helvetica', 'normal');
                 const contactParts = [userData.email, userData.phone].filter(p => p && p.trim());
-                const contactLine = contactParts.join(' | ');
-                pdf.text(contactLine, margin, 38);
+                if (contactParts.length > 0) {
+                    const contactLine = contactParts.join(' | ');
+                    pdf.text(contactLine, margin, 38);
+                }
                 
                 yPosition = 60;
                 pdf.setTextColor(51, 51, 51);
@@ -1175,11 +1177,15 @@ ${data.matricNumber}`;
                 pdf.setFont('times', 'normal');
                 pdf.setFontSize(10);
                 const contactParts = [userData.email, userData.phone].filter(p => p && p.trim());
-                const contactLine = contactParts.join(' | ');
-                const contactWidth = pdf.getTextWidth(contactLine);
-                pdf.text(contactLine, (pageWidth - contactWidth) / 2, yPosition);
+                if (contactParts.length > 0) {
+                    const contactLine = contactParts.join(' | ');
+                    const contactWidth = pdf.getTextWidth(contactLine);
+                    pdf.text(contactLine, (pageWidth - contactWidth) / 2, yPosition);
+                    yPosition += 5;
+                } else {
+                    yPosition += 2;
+                }
                 
-                yPosition += 5;
                 pdf.setLineWidth(0.5);
                 pdf.line(margin, yPosition, pageWidth - margin, yPosition);
                 yPosition += 1;
@@ -1194,28 +1200,42 @@ ${data.matricNumber}`;
                 
                 pdf.setTextColor(255, 255, 255);
                 pdf.setFont('helvetica', 'bold');
-                pdf.setFontSize(16);
+                pdf.setFontSize(14);
                 const nameParts = userData.name.split(' ');
-                pdf.text(nameParts[0] || 'First', 10, 30);
-                pdf.setFontSize(12);
-                pdf.setFont('helvetica', 'normal');
-                pdf.text(nameParts.slice(1).join(' ') || 'Last', 10, 40);
+                const firstName = nameParts[0] || '';
+                const lastName = nameParts.slice(1).join(' ') || '';
                 
-                pdf.setFontSize(9);
-                pdf.setFont('helvetica', 'bold');
-                pdf.text('CONTACT', 10, 60);
-                pdf.setFont('helvetica', 'normal');
-                pdf.setFontSize(8);
-                let contactY = 67;
-                if (userData.email) {
-                    pdf.text(userData.email, 10, contactY, { maxWidth: 40 });
-                    contactY += 7;
+                if (firstName) {
+                    pdf.text(firstName, 10, 30);
                 }
-                if (userData.phone) {
-                    pdf.text(userData.phone, 10, contactY, { maxWidth: 40 });
+                if (lastName) {
+                    pdf.setFontSize(11);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.text(lastName, 10, 40);
                 }
                 
-                margin = 65;
+                // Only show CONTACT label if there's actual contact info
+                if (userData.email || userData.phone) {
+                    pdf.setFontSize(8);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text('CONTACT', 10, 55);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(7);
+                    let contactY = 61;
+                    if (userData.email) {
+                        const emailLines = pdf.splitTextToSize(userData.email, 45);
+                        emailLines.forEach(line => {
+                            pdf.text(line, 10, contactY);
+                            contactY += 5;
+                        });
+                    }
+                    if (userData.phone) {
+                        pdf.text(userData.phone, 10, contactY);
+                    }
+                }
+                
+                margin = 68;
+                const contentWidth = pageWidth - margin - 15; // Leave 15mm margin on right
                 yPosition = 30;
                 pdf.setTextColor(51, 51, 51);
             }
@@ -1235,10 +1255,13 @@ ${data.matricNumber}`;
                 pdf.setFontSize(9);
                 pdf.setTextColor(127, 140, 141);
                 const contactParts = [userData.email, userData.phone].filter(p => p && p.trim());
-                const contactLine = contactParts.join(' | ');
-                pdf.text(contactLine, margin, yPosition);
-                
-                yPosition += 15;
+                if (contactParts.length > 0) {
+                    const contactLine = contactParts.join(' | ');
+                    pdf.text(contactLine, margin, yPosition);
+                    yPosition += 15;
+                } else {
+                    yPosition += 10;
+                }
                 pdf.setTextColor(52, 73, 94);
             }
             
@@ -1258,8 +1281,10 @@ ${data.matricNumber}`;
                 pdf.setFont('helvetica', 'normal');
                 pdf.setFontSize(10);
                 const contactParts = [userData.email, userData.phone].filter(p => p && p.trim());
-                const contactLine = contactParts.join(' • ');
-                pdf.text(contactLine, margin, 45);
+                if (contactParts.length > 0) {
+                    const contactLine = contactParts.join(' • ');
+                    pdf.text(contactLine, margin, 45);
+                }
                 
                 yPosition = 70;
                 pdf.setTextColor(51, 51, 51);
@@ -1275,9 +1300,13 @@ ${data.matricNumber}`;
                 pdf.setFont('helvetica', 'normal');
                 pdf.setFontSize(10);
                 const contactParts = [userData.email, userData.phone].filter(p => p && p.trim());
-                const contactLine = contactParts.join(' | ');
-                pdf.text(contactLine, margin, yPosition);
-                yPosition += 10;
+                if (contactParts.length > 0) {
+                    const contactLine = contactParts.join(' | ');
+                    pdf.text(contactLine, margin, yPosition);
+                    yPosition += 10;
+                } else {
+                    yPosition += 5;
+                }
             }
             
             // Add main content
@@ -1288,6 +1317,12 @@ ${data.matricNumber}`;
             const lines = cleanedContent.split('\n');
             const lineHeight = 6;
             
+            // Calculate maxWidth based on template
+            let contentMaxWidth = maxWidth;
+            if (template === 'creative-teal') {
+                contentMaxWidth = pageWidth - margin - 15; // Account for right margin
+            }
+            
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
                 
@@ -1297,24 +1332,37 @@ ${data.matricNumber}`;
                     if (template === 'creative-teal') {
                         pdf.setFillColor(32, 178, 170);
                         pdf.rect(0, 0, 60, pageHeight, 'F');
+                        contentMaxWidth = pageWidth - margin - 15;
                     }
                 }
                 
                 const isHeader = (line.match(/^[A-Z\s]+$/) || 
-                                line.match(/^(PROFESSIONAL SUMMARY|CORE COMPETENCIES|PROFESSIONAL EXPERIENCE|EDUCATION|SKILLS|SUBJECT)/i)) &&
+                                line.match(/^(PROFESSIONAL SUMMARY|CORE COMPETENCIES|PROFESSIONAL EXPERIENCE|EDUCATION|SKILLS|SUBJECT|Professional Summary|Core Competencies|Professional Experience|Education|Skills)/i)) &&
                                 line.trim().length > 0 && 
                                 line.trim().length < 60;
                 
                 if (isHeader) {
                     pdf.setFont('helvetica', 'bold');
-                    pdf.setFontSize(12);
-                    yPosition += 4;
-                    pdf.text(line, margin, yPosition);
-                    yPosition += lineHeight + 2;
+                    pdf.setFontSize(13);
+                    yPosition += 5;
+                    const headerLines = pdf.splitTextToSize(line, contentMaxWidth);
+                    headerLines.forEach(headerLine => {
+                        if (yPosition > pageHeight - 30) {
+                            pdf.addPage();
+                            yPosition = margin;
+                            if (template === 'creative-teal') {
+                                pdf.setFillColor(32, 178, 170);
+                                pdf.rect(0, 0, 60, pageHeight, 'F');
+                            }
+                        }
+                        pdf.text(headerLine, margin, yPosition);
+                        yPosition += lineHeight;
+                    });
+                    yPosition += 2;
                     pdf.setFont('helvetica', 'normal');
                     pdf.setFontSize(11);
                 } else if (line.trim().length > 0) {
-                    const wrappedLines = pdf.splitTextToSize(line, maxWidth);
+                    const wrappedLines = pdf.splitTextToSize(line, contentMaxWidth);
                     for (let j = 0; j < wrappedLines.length; j++) {
                         if (yPosition > pageHeight - 30) {
                             pdf.addPage();
@@ -1322,6 +1370,7 @@ ${data.matricNumber}`;
                             if (template === 'creative-teal') {
                                 pdf.setFillColor(32, 178, 170);
                                 pdf.rect(0, 0, 60, pageHeight, 'F');
+                                contentMaxWidth = pageWidth - margin - 15;
                             }
                         }
                         pdf.text(wrappedLines[j], margin, yPosition);
