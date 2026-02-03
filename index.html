@@ -450,6 +450,7 @@
         let generatedDocumentText = "";
         let isPaid = false; 
         let currentDocId = null; 
+        let currentUserData = {}; // Store user data globally
 
         if (!localStorage.getItem('selected_template')) {
             localStorage.setItem('selected_template', 'modern-blue');
@@ -535,6 +536,7 @@
                             generatedDocumentText = data.draftContent;
                             currentDocId = verifiedDocId;
                             currentDocumentType = data.type;
+                            currentUserData = data.data; // Restore user data
                             
                             document.getElementById('letter').textContent = generatedDocumentText;
                             document.getElementById('preview-section').classList.remove('hidden');
@@ -709,6 +711,7 @@
             }
 
             const data = collectFormData(currentDocumentType);
+            currentUserData = data; // Store globally
             
             if (currentDocumentType === 'resume' || currentDocumentType === 'coverLetter') {
                 saveData(data);
@@ -744,11 +747,11 @@
 
         function createAIPrompt(docType, data) {
             const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-            let systemPrompt = "You are Jobletters.xyz, a world-class expert in creating flawless professional documents. Your output must be perfectly formatted, grammatically impeccable, and ready for immediate professional use. Write in clear, elegant prose without any markdown formatting, asterisks, or special characters. Use proper paragraph spacing with blank lines between sections. CRITICAL: Never include placeholder text like 'Professional Name', '[Your Name]', '[Company Name]', or any bracketed placeholders. Use only the actual information provided. Never include explanatory notes or meta-commentary. Do not repeat the person's name, email, or phone number in the body text as these appear in the document header.";
+            let systemPrompt = "You are Jobletters.xyz, a world-class expert in creating flawless professional documents. Your output must be perfectly formatted, grammatically impeccable, and ready for immediate professional use. Write in clear, elegant prose without any markdown formatting, asterisks, or special characters. Use proper paragraph spacing with blank lines between sections. CRITICAL RULES: 1) NEVER include placeholder text like '[Your Name]', '[Company Name]', '[Job Title]', '[Location]', '[Month, Year]', or ANY bracketed text. 2) If specific information is not provided, omit that detail entirely rather than using placeholders. 3) Write resumes in FIRST PERSON using 'I', 'my', 'me'. 4) Do NOT repeat the person's name, email, or phone in the body text - these go in headers only. 5) Use only actual information provided - never invent companies, dates, or details.";
             let userPrompt = "";
 
             if (docType === "resume") {
-                userPrompt = `Create an exceptional professional resume for the following candidate.
+                userPrompt = `Create an exceptional professional resume in FIRST PERSON perspective.
 
 Full Name: ${data.name}
 Target Position: ${data.jobTitle}
@@ -758,36 +761,37 @@ Work Experience: ${data.experience}
 Education: ${data.education}
 Skills: ${data.skills}
 
-IMPORTANT FORMATTING RULES:
-- Do NOT include the candidate's name, email, or phone in the body text - these go in the header only
-- Do NOT write "Professional Name" or any placeholder text
-- Start directly with the Professional Summary section
-- Structure with these sections: Professional Summary, Core Competencies, Professional Experience, Education
-- Write in active voice with strong action verbs
-- Use actual company names, dates, and details from the experience provided
-- Each section header should be in Title Case (e.g., "Professional Summary" not "PROFESSIONAL SUMMARY")`;
+CRITICAL REQUIREMENTS:
+- Write the Professional Summary in FIRST PERSON (use "I am", "I have", "My expertise")
+- Do NOT include name, email, or phone in body text (header only)
+- NEVER use placeholder text like [Job Title], [Company Name], [Location], [Month, Year]
+- Structure: Professional Summary, Core Competencies, Professional Experience, Education
+- Extract actual company names, job titles, and achievements from the Work Experience provided
+- If work experience contains specific companies/roles, use those EXACTLY
+- Use bullet points for experience with strong action verbs in past tense
+- Each section header in Title Case`;
             }
 
             else if (docType === "coverLetter") {
-                userPrompt = `Write a compelling cover letter for this job application:
+                userPrompt = `Write a compelling cover letter in FIRST PERSON for this job application:
 
 Applicant Name: ${data.name}
 Target Position: ${data.jobTitle}
 Company: ${data.companyName}
 Key Achievements: ${data.experience}
 
-The letter should open with enthusiasm, demonstrate cultural fit, highlight 2-3 achievements, and close with confidence.`;
+CRITICAL: Write in first person using "I" throughout. Open with enthusiasm, demonstrate cultural fit, highlight 2-3 achievements, and close with confidence. NEVER use bracketed placeholders.`;
             }
 
             else if (docType === "resignation") {
-                userPrompt = `Write a gracious and professional resignation letter:
+                userPrompt = `Write a gracious and professional resignation letter in FIRST PERSON:
 
 Employee Name: ${data.name}
 Current Position: ${data.position}
 Last Day of Work: ${data.lastDay}
 Reason: ${data.reason || 'pursuing new opportunities'}
 
-The letter must clearly state the resignation, express gratitude, offer to assist with transition, and maintain positive relationships.`;
+CRITICAL: Write in first person using "I" and "my". Clearly state the resignation, express gratitude, offer to assist with transition, and maintain positive relationships. NEVER use bracketed placeholders.`;
             }
             
             else if (docType === "academic") {
@@ -800,7 +804,7 @@ The letter must clearly state the resignation, express gratitude, offer to assis
                 const recipientTitle = recipientMap[data.recipient];
                 const purposeTitle = data.purpose.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
-                userPrompt = `Write a respectful academic letter:
+                userPrompt = `Write a respectful academic letter in FIRST PERSON:
 
 Date: ${currentDate}
 Recipient: ${recipientTitle}
@@ -809,7 +813,7 @@ Student ID: ${data.matricNumber}
 Purpose: ${purposeTitle}
 Justification: ${data.details}
 
-Use formal academic tone, clearly state the request, provide compelling justification, and close with courteous language.`;
+CRITICAL: Write in first person using "I" and "my". Use formal academic tone, clearly state the request, provide compelling justification, and close with courteous language. NEVER use bracketed placeholders.`;
             }
             
             return [
@@ -854,7 +858,7 @@ Use formal academic tone, clearly state the request, provide compelling justific
             if (docType === "resume") {
                 return `PROFESSIONAL SUMMARY
 
-Accomplished professional with demonstrated expertise in ${data.skills.split(',')[0].trim()}. Proven track record of driving results through strategic initiatives and collaborative team leadership.
+I am an accomplished professional with demonstrated expertise in ${data.skills.split(',')[0].trim()}. I have a proven track record of driving results through strategic initiatives and collaborative team leadership.
 
 CORE COMPETENCIES
 
@@ -895,7 +899,7 @@ Dear Manager,
 
 Please accept this letter as formal notification of my resignation from the position of ${data.position}. My last day of work will be ${data.lastDay}.
 
-${data.reason ? 'This decision comes after careful consideration, as I have ' + data.reason + '.' : ''}
+${data.reason ? 'This decision comes after careful consideration. I have ' + data.reason + '.' : ''}
 
 I want to express my sincere gratitude for the opportunities I have had during my tenure here. I am committed to ensuring a smooth transition.
 
@@ -980,7 +984,7 @@ ${data.matricNumber}`;
             
             const priceText = document.getElementById('currentPrice').textContent.replace('₦', '');
             const numericPrice = parseInt(priceText.replace(/[^\d]/g, '') || '500'); 
-            const emailData = collectFormData(currentDocumentType);
+            const emailData = currentUserData; // Use stored user data
             const userEmail = emailData.email || 'guest@jobletters.xyz';
             const userName = emailData.name || 'Guest User';
             
@@ -1038,7 +1042,7 @@ ${data.matricNumber}`;
             
             switch(docType) {
                 case 'resume':
-                    data.name = document.getElementById('fullName')?.value || 'Professional Name';
+                    data.name = document.getElementById('fullName')?.value || '';
                     data.jobTitle = document.getElementById('jobTitle')?.value || '';
                     data.email = document.getElementById('email')?.value || '';
                     data.phone = document.getElementById('phone')?.value || '';
@@ -1048,7 +1052,7 @@ ${data.matricNumber}`;
                     break;
                     
                 case 'coverLetter':
-                    data.name = document.getElementById('cl_fullName')?.value || 'Your Name';
+                    data.name = document.getElementById('cl_fullName')?.value || '';
                     data.jobTitle = document.getElementById('cl_jobTitle')?.value || '';
                     data.companyName = document.getElementById('cl_companyName')?.value || '';
                     data.experience = document.getElementById('cl_experience')?.value || '';
@@ -1057,7 +1061,7 @@ ${data.matricNumber}`;
                     break;
                     
                 case 'resignation':
-                    data.name = document.getElementById('rl_fullName')?.value || 'Your Name';
+                    data.name = document.getElementById('rl_fullName')?.value || '';
                     data.position = document.getElementById('rl_position')?.value || '';
                     data.lastDay = document.getElementById('rl_lastDay')?.value || '';
                     data.reason = document.getElementById('rl_reason')?.value || '';
@@ -1066,7 +1070,7 @@ ${data.matricNumber}`;
                     break;
                     
                 case 'academic':
-                    data.name = document.getElementById('ac_fullName')?.value || 'Student Name';
+                    data.name = document.getElementById('ac_fullName')?.value || '';
                     data.matricNumber = document.getElementById('ac_matricNumber')?.value || '';
                     data.recipient = document.getElementById('ac_recipient')?.value || '';
                     data.purpose = document.getElementById('ac_purpose')?.value || '';
@@ -1080,7 +1084,7 @@ ${data.matricNumber}`;
         }
 
         // ==========================================
-        // PROPER PDF GENERATION WITH JSPDF
+        // FIXED PDF GENERATION WITH PROPER USER DATA
         // ==========================================
 
         async function downloadPDF() { 
@@ -1098,7 +1102,7 @@ ${data.matricNumber}`;
             showModal("📄 Creating professional PDF...");
             
             const template = localStorage.getItem('selected_template') || 'modern-blue';
-            const userData = collectFormData(currentDocumentType);
+            const userData = currentUserData; // Use stored user data
             const docTypeDisplay = document.getElementById('documentType').options[document.getElementById('documentType').selectedIndex].text;
             const filename = `${docTypeDisplay.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.pdf`;
             
@@ -1127,7 +1131,7 @@ ${data.matricNumber}`;
             const maxWidth = pageWidth - (margin * 2);
             let yPosition = margin;
             
-            // Clean content - remove empty lines, brackets, N/A
+            // Clean content - remove empty lines, brackets, N/A, placeholders
             const cleanedContent = content
                 .split('\n')
                 .filter(line => {
@@ -1137,6 +1141,7 @@ ${data.matricNumber}`;
                            !trimmed.match(/^N\/A\s*$/i) &&
                            !trimmed.match(/^\s*-\s*$/) &&
                            trimmed !== '[]' &&
+                           !trimmed.match(/\[.*?\]/) && // Remove any bracketed text
                            trimmed !== 'Note: This is a demonstration draft. Configure your OpenAI API key in admin panel for full AI generation.';
                 })
                 .join('\n');
@@ -1149,11 +1154,13 @@ ${data.matricNumber}`;
                 pdf.setTextColor(255, 255, 255);
                 pdf.setFontSize(24);
                 pdf.setFont('helvetica', 'bold');
-                pdf.text(userData.name, margin, 25);
+                pdf.text(userData.name || 'Professional Name', margin, 25);
                 
                 pdf.setFontSize(10);
                 pdf.setFont('helvetica', 'normal');
-                const contactParts = [userData.email, userData.phone].filter(p => p && p.trim());
+                const contactParts = [];
+                if (userData.email && userData.email.trim()) contactParts.push(userData.email);
+                if (userData.phone && userData.phone.trim()) contactParts.push(userData.phone);
                 if (contactParts.length > 0) {
                     const contactLine = contactParts.join(' | ');
                     pdf.text(contactLine, margin, 38);
@@ -1168,13 +1175,16 @@ ${data.matricNumber}`;
                 pdf.setFont('times', 'bold');
                 pdf.setFontSize(18);
                 pdf.setTextColor(0, 0, 0);
-                const nameWidth = pdf.getTextWidth(userData.name);
-                pdf.text(userData.name, (pageWidth - nameWidth) / 2, yPosition);
+                const name = userData.name || 'Professional Name';
+                const nameWidth = pdf.getTextWidth(name);
+                pdf.text(name, (pageWidth - nameWidth) / 2, yPosition);
                 
                 yPosition += 8;
                 pdf.setFont('times', 'normal');
                 pdf.setFontSize(10);
-                const contactParts = [userData.email, userData.phone].filter(p => p && p.trim());
+                const contactParts = [];
+                if (userData.email && userData.email.trim()) contactParts.push(userData.email);
+                if (userData.phone && userData.phone.trim()) contactParts.push(userData.phone);
                 if (contactParts.length > 0) {
                     const contactLine = contactParts.join(' | ');
                     const contactWidth = pdf.getTextWidth(contactLine);
@@ -1199,7 +1209,8 @@ ${data.matricNumber}`;
                 pdf.setTextColor(255, 255, 255);
                 pdf.setFont('helvetica', 'bold');
                 pdf.setFontSize(14);
-                const nameParts = userData.name.split(' ');
+                const name = userData.name || 'Professional Name';
+                const nameParts = name.split(' ');
                 const firstName = nameParts[0] || '';
                 const lastName = nameParts.slice(1).join(' ') || '';
                 
@@ -1215,29 +1226,29 @@ ${data.matricNumber}`;
                     sidebarY += 15;
                 }
                 
-                // Only show CONTACT label if there's actual contact info
-                if (userData.email || userData.phone) {
+                // Only show CONTACT if there's actual contact info
+                if ((userData.email && userData.email.trim()) || (userData.phone && userData.phone.trim())) {
                     pdf.setFontSize(8);
                     pdf.setFont('helvetica', 'bold');
                     pdf.text('CONTACT', 10, sidebarY);
                     sidebarY += 6;
                     pdf.setFont('helvetica', 'normal');
                     pdf.setFontSize(7);
-                    if (userData.email) {
+                    if (userData.email && userData.email.trim()) {
                         const emailLines = pdf.splitTextToSize(userData.email, 45);
                         emailLines.forEach(line => {
                             pdf.text(line, 10, sidebarY);
                             sidebarY += 5;
                         });
                     }
-                    if (userData.phone) {
+                    if (userData.phone && userData.phone.trim()) {
                         pdf.text(userData.phone, 10, sidebarY);
                     }
                 }
                 
                 margin = 68;
-                const contentWidth = pageWidth - margin - 15; // Leave 15mm margin on right
-                yPosition = 25; // Start content higher to reduce empty space
+                const contentWidth = pageWidth - margin - 15;
+                yPosition = 25;
                 pdf.setTextColor(51, 51, 51);
             }
             
@@ -1246,7 +1257,7 @@ ${data.matricNumber}`;
                 pdf.setFont('helvetica', 'normal');
                 pdf.setFontSize(20);
                 pdf.setTextColor(44, 62, 80);
-                pdf.text(userData.name, margin, yPosition);
+                pdf.text(userData.name || 'Professional Name', margin, yPosition);
                 
                 yPosition += 8;
                 pdf.setFillColor(52, 152, 219);
@@ -1255,7 +1266,9 @@ ${data.matricNumber}`;
                 yPosition += 8;
                 pdf.setFontSize(9);
                 pdf.setTextColor(127, 140, 141);
-                const contactParts = [userData.email, userData.phone].filter(p => p && p.trim());
+                const contactParts = [];
+                if (userData.email && userData.email.trim()) contactParts.push(userData.email);
+                if (userData.phone && userData.phone.trim()) contactParts.push(userData.phone);
                 if (contactParts.length > 0) {
                     const contactLine = contactParts.join(' | ');
                     pdf.text(contactLine, margin, yPosition);
@@ -1274,14 +1287,16 @@ ${data.matricNumber}`;
                 pdf.setTextColor(255, 255, 255);
                 pdf.setFont('helvetica', 'bold');
                 pdf.setFontSize(22);
-                pdf.text(userData.name, margin, 25);
+                pdf.text(userData.name || 'Professional Name', margin, 25);
                 
                 pdf.setFillColor(255, 215, 0);
                 pdf.rect(margin, 32, 35, 2, 'F');
                 
                 pdf.setFont('helvetica', 'normal');
                 pdf.setFontSize(10);
-                const contactParts = [userData.email, userData.phone].filter(p => p && p.trim());
+                const contactParts = [];
+                if (userData.email && userData.email.trim()) contactParts.push(userData.email);
+                if (userData.phone && userData.phone.trim()) contactParts.push(userData.phone);
                 if (contactParts.length > 0) {
                     const contactLine = contactParts.join(' • ');
                     pdf.text(contactLine, margin, 45);
@@ -1295,12 +1310,14 @@ ${data.matricNumber}`;
             else {
                 pdf.setFont('helvetica', 'bold');
                 pdf.setFontSize(16);
-                pdf.text(userData.name, margin, yPosition);
+                pdf.text(userData.name || 'Professional Name', margin, yPosition);
                 yPosition += 8;
                 
                 pdf.setFont('helvetica', 'normal');
                 pdf.setFontSize(10);
-                const contactParts = [userData.email, userData.phone].filter(p => p && p.trim());
+                const contactParts = [];
+                if (userData.email && userData.email.trim()) contactParts.push(userData.email);
+                if (userData.phone && userData.phone.trim()) contactParts.push(userData.phone);
                 if (contactParts.length > 0) {
                     const contactLine = contactParts.join(' | ');
                     pdf.text(contactLine, margin, yPosition);
@@ -1321,7 +1338,7 @@ ${data.matricNumber}`;
             // Calculate maxWidth based on template
             let contentMaxWidth = maxWidth;
             if (template === 'creative-teal') {
-                contentMaxWidth = pageWidth - margin - 15; // Account for right margin
+                contentMaxWidth = pageWidth - margin - 15;
             }
             
             for (let i = 0; i < lines.length; i++) {
@@ -1329,12 +1346,12 @@ ${data.matricNumber}`;
                 
                 if (yPosition > pageHeight - 30) {
                     pdf.addPage();
-                    yPosition = 25; // Start higher on new pages to reduce empty space
+                    yPosition = 25;
                     if (template === 'creative-teal') {
                         pdf.setFillColor(32, 178, 170);
                         pdf.rect(0, 0, 60, pageHeight, 'F');
                         contentMaxWidth = pageWidth - margin - 15;
-                        yPosition = 25; // Consistent starting position
+                        yPosition = 25;
                     }
                 }
                 
@@ -1425,7 +1442,7 @@ ${data.matricNumber}`;
                 return;
             }
             
-            const emailData = collectFormData(currentDocumentType);
+            const emailData = currentUserData; // Use stored user data
             const subject = `Your ${document.getElementById('documentType').options[document.getElementById('documentType').selectedIndex].text}`;
             const body = `Your document is ready:\n\n${generatedDocumentText}`;
             const userEmail = emailData.email || '';
